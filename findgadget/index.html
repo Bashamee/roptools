@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Find Gadget · Bashame's ROP Tools</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #0a0d12; font-family: monospace; margin: 0; padding: 16px; display: flex; justify-content: center; min-height: 100vh; }
+        .card { max-width: 1300px; width: 100%; background: #11161f; border-radius: 24px; border: 1px solid #252d3a; overflow: hidden; height: fit-content; }
+        .header { padding: 14px 20px; background: #0c1017; border-bottom: 1px solid #1e2530; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .header h1 { margin: 0; font-size: 1.2rem; font-weight: 500; color: #fff; }
+        .credit { color: #b8d0ff; font-size: 0.85rem; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 20px; background: #0e121b; border-bottom: 1px solid #202732; align-items: center; }
+        .toolbar-right { margin-left: auto; }
+        .search-section { padding: 10px 20px; background: #0e121b; border-bottom: 1px solid #202732; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+        .search-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 200px; }
+        .search-group label { font-size: 0.68rem; color: #8da3c0; letter-spacing: 0.5px; }
+        textarea { background: #1a212c; border: 1px solid #3a4a5a; border-radius: 14px; padding: 8px 12px; color: white; font-family: monospace; font-size: 0.9rem; width: 100%; resize: vertical; outline: none; }
+        textarea:focus { border-color: #5a7aaa; }
+        button { background: #1e2632; border: none; padding: 6px 14px; border-radius: 40px; font-family: inherit; font-size: 0.78rem; font-weight: 500; color: #fff; cursor: pointer; transition: 0.15s; white-space: nowrap; }
+        button:hover { background: #2f3a48; transform: translateY(-1px); }
+        .upload-btn { background: #1a2e1a; color: #8bcb8b; animation: pulse 1.5s infinite; }
+        .clear-btn { background: #2a1e24; color: #f2a9b5; }
+        .sort-btn { background: #232e3c; color: #8ab4d4; }
+        .copy-all-btn { background: #1a2a2c; color: #7dcfcf; }
+        .search-btn { background: #1e3040; color: #7ab4d4; padding: 8px 18px; }
+        .help-btn { background: #232e3c; color: #8ab4d4; }
+        /* Disas status bar */
+        .disas-bar { display: flex; align-items: center; gap: 10px; padding: 7px 20px; background: #0c1017; border-bottom: 1px solid #1e2530; flex-wrap: wrap; }
+        .disas-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; padding: 3px 12px; border-radius: 30px; font-weight: 500; }
+        .disas-badge.no-file { background: #1e1a2a; color: #8870b8; border: 1px solid #3a2e5a; }
+        .disas-badge.loading { background: #1a2118; color: #8bcb8b; border: 1px solid #2e5a3a; }
+        .disas-badge.loaded { background: #0e1e12; color: #5fd88a; border: 1px solid #2e7a4a; }
+        .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+        .disas-badge.loaded .dot { background: #5fd88a; box-shadow: 0 0 5px #5fd88a88; }
+        .disas-badge.no-file .dot { background: #8870b8; }
+        .spinner { width: 11px; height: 11px; border: 2px solid #2e5a3a; border-top-color: #8bcb8b; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+        .stat-chip { font-size: 0.7rem; color: #7a93b0; background: #161d28; padding: 2px 8px; border-radius: 16px; }
+        /* Help panel */
+        .help-panel { background: #0d1219; margin: 0 20px 10px; padding: 10px 14px; border-radius: 14px; border-left: 3px solid #4a72c7; font-size: 0.8rem; color: #9ab0c8; display: none; line-height: 1.6; }
+        .help-panel.show { display: block; }
+        .help-panel code { color: #8bcb8b; background: #161d28; padding: 1px 5px; border-radius: 8px; }
+        /* Results */
+        .results-container { background: #07090e; border: 1px solid #1e2530; border-radius: 14px; margin: 8px 20px 14px; padding: 10px 14px; overflow-y: auto; height: 52vh; font-family: monospace; font-size: 12.5px; line-height: 1.4; color: #dde8ff; }
+        .gadget-block { border-left: 2px solid #4a72c7; margin-bottom: 14px; padding: 6px 10px; background: #0c1018; border-radius: 10px; }
+        .gadget-header { color: #e8c86a; font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+        .copy-gadget-btn { background: #162028; border: none; border-radius: 20px; padding: 2px 10px; font-size: 0.68rem; cursor: pointer; color: #7dcfcf; font-family: monospace; }
+        .copy-gadget-btn:hover { background: #243040; }
+        .gadget-line { white-space: pre-wrap; color: #b8cce8; }
+        /* Status bar */
+        .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 20px 12px; flex-wrap: wrap; gap: 8px; }
+        .status-msg { font-size: 0.75rem; color: #8aa0b8; background: #141b24; padding: 4px 10px; border-radius: 30px; }
+        .status-count { font-size: 0.75rem; color: #7bcf9a; background: #0e1e14; padding: 4px 10px; border-radius: 30px; }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(139,203,139,0); } 50% { box-shadow: 0 0 0 5px rgba(139,203,139,0.15); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #10151e; }
+        ::-webkit-scrollbar-thumb { background: #2e3a4e; border-radius: 8px; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>🔍 Find Gadget · Bashame's ROP Tools</h1>
+        <span class="credit">cre: @Bashamee</span>
+    </div>
+    <div class="toolbar">
+        <button id="uploadBtn" class="upload-btn">📂 Upload disassembly</button>
+        <button id="helpBtn" class="help-btn">❓ Help</button>
+        <button id="sortAddrBtn" class="sort-btn">📊 Sort by address</button>
+        <button id="sortLenBtn" class="sort-btn">📏 Sort by length</button>
+        <button id="copyAllBtn" class="copy-all-btn">📋 Copy all</button>
+        <button id="clearBtn" class="clear-btn toolbar-right">🗑 Clear</button>
+    </div>
+    <div class="disas-bar">
+        <div class="disas-badge no-file" id="disasBadge"><span class="dot"></span><span id="disasBadgeText">No disassembly loaded</span></div>
+        <div id="disasStats" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+    <div class="search-section">
+        <div class="search-group">
+            <label>INSTRUCTIONS — one per line, prefix match (e.g. <code style="color:#8bcb8b;background:#161d28;padding:1px 5px;border-radius:6px;">mov r</code> matches <code style="color:#8bcb8b;background:#161d28;padding:1px 5px;border-radius:6px;">mov r0</code>, <code style="color:#8bcb8b;background:#161d28;padding:1px 5px;border-radius:6px;">mov r12, r1</code> …)</label>
+            <textarea id="instructionsInput" rows="2" placeholder="pop er&#10;pop pc"></textarea>
+        </div>
+        <button id="searchBtn" class="search-btn">🔎 Find</button>
+    </div>
+    <div id="helpPanel" class="help-panel">
+        <strong>How to use:</strong><br>
+        1. Click <strong>Upload disassembly</strong> to load a .txt / .asm / .dis file.<br>
+        2. Enter instructions to search (one per line). Matching is <em>prefix-based</em> — no wildcards needed: <code>pop er</code> matches <code>pop er0</code>, <code>pop er2</code>, <code>pop er12</code>, etc.<br>
+        3. Click <strong>Find</strong>. Each result ends at <code>pop pc</code>, <code>rt</code>, or <code>rti</code>.<br>
+        4. Use <strong>Sort by address / length</strong> to reorder. <strong>Copy all</strong> copies every found gadget.
+    </div>
+    <div id="resultsContainer" class="results-container">
+        <pre style="margin:0;color:#4a6080;">// Upload a disassembly file and enter instructions to search.</pre>
+    </div>
+    <div class="status-bar">
+        <div class="status-msg" id="statusAction">✅ Ready</div>
+        <div class="status-count" id="statusGadgets"></div>
+    </div>
+</div>
+
+<script>
+    let currentRawLines = [];
+    let currentInstructionLines = [];
+    let currentContent = "";
+    let lastGadgets = [];
+    let currentSort = 'len';
+
+    const resultsDiv = document.getElementById("resultsContainer");
+    const statusAction = document.getElementById("statusAction");
+    const statusGadgets = document.getElementById("statusGadgets");
+    const disasBadge = document.getElementById("disasBadge");
+    const disasStats = document.getElementById("disasStats");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const searchBtn = document.getElementById("searchBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const helpBtn = document.getElementById("helpBtn");
+    const sortAddrBtn = document.getElementById("sortAddrBtn");
+    const sortLenBtn = document.getElementById("sortLenBtn");
+    const copyAllBtn = document.getElementById("copyAllBtn");
+    const instructionsTextarea = document.getElementById("instructionsInput");
+    const helpPanel = document.getElementById("helpPanel");
+
+    // ── Status helpers ──────────────────────────────────────────────
+    function setAction(text, isError = false) {
+        statusAction.innerHTML = text;
+        statusAction.style.color = isError ? "#f28b82" : "#8aa0b8";
+    }
+    function setGadgetCount(count) {
+        statusGadgets.textContent = count !== undefined ? `🎯 ${count} gadget(s) found` : "";
+    }
+    function setDisasState(state, data = {}) {
+        disasBadge.className = 'disas-badge ' + state;
+        if (state === 'no-file') {
+            disasBadge.innerHTML = `<span class="dot"></span><span>No disassembly loaded</span>`;
+            disasStats.innerHTML = '';
+        } else if (state === 'loading') {
+            disasBadge.innerHTML = `<span class="spinner"></span><span>Loading…</span>`;
+            disasStats.innerHTML = '';
+        } else if (state === 'loaded') {
+            const { name, lines, instrs, size } = data;
+            disasBadge.innerHTML = `<span class="dot"></span><span>✅ <strong>${name}</strong></span>`;
+            disasStats.innerHTML = `
+                <span class="stat-chip">📄 ${lines.toLocaleString()} lines</span>
+                <span class="stat-chip">⚙️ ${instrs.toLocaleString()} instructions</span>
+                <span class="stat-chip">💾 ${(size/1024).toFixed(1)} KB</span>`;
+        }
+    }
+
+    // ── Instruction helpers ─────────────────────────────────────────
+    function normalizeInstruction(instr) {
+        return instr.replace(/\s+/g, '').toLowerCase();
+    }
+
+    // Prefix match — pattern must match the START of the instruction.
+    // No wildcard needed: "mopr" matches "mopr0", "mopr12,r1" etc.
+    function matchesPattern(normInstr, pattern) {
+        if (pattern.length === 0) return true;
+        return normInstr.startsWith(pattern);
+    }
+
+    function isLabelLine(line) {
+        let t = line.trim();
+        return (t.match(/^\.l_[0-9a-f]+:$/i) !== null) || (t.endsWith(':') && !t.includes(';'));
+    }
+
+    function parseLine(line) {
+        let t = line.trim();
+        if (t === '' || t.startsWith(';')) return { type: 'skip' };
+        if (isLabelLine(line)) return { type: 'label' };
+        let idx = line.indexOf(';');
+        let instr = (idx === -1 ? line : line.substring(0, idx)).trim();
+        return { type: 'instr', normalized: normalizeInstruction(instr) };
+    }
+
+    function buildInstructionIndex(rawLines) {
+        let result = [];
+        for (let i = 0; i < rawLines.length; i++) {
+            let p = parseLine(rawLines[i]);
+            if (p.type === 'instr') result.push({ rawIndex: i, normalized: p.normalized });
+        }
+        return result;
+    }
+
+    function isEndOfGadgetRaw(line) {
+        let p = parseLine(line);
+        if (p.type !== 'instr') return false;
+        return p.normalized === 'poppc' || p.normalized === 'rt' || p.normalized === 'rti';
+    }
+
+    // ── Gadget search ───────────────────────────────────────────────
+    function findAllGadgets(patterns) {
+        if (!currentInstructionLines.length || !patterns.length) return [];
+        let gadgets = [];
+        let total = currentInstructionLines.length;
+        for (let i = 0; i < total; i++) {
+            if (!matchesPattern(currentInstructionLines[i].normalized, patterns[0])) continue;
+            let ok = true;
+            for (let j = 1; j < patterns.length; j++) {
+                if (i+j >= total || !matchesPattern(currentInstructionLines[i+j].normalized, patterns[j])) {
+                    ok = false; break;
+                }
+            }
+            if (!ok) continue;
+            let start = currentInstructionLines[i].rawIndex;
+            let lines = [], end = start;
+            for (let k = start; k < currentRawLines.length; k++) {
+                lines.push(currentRawLines[k]);
+                if (isEndOfGadgetRaw(currentRawLines[k])) { end = k; break; }
+            }
+            let addr = '';
+            let m = currentRawLines[start].match(/;\s*([0-9A-F]+)\s*\|/i);
+            if (m) addr = m[1];
+            gadgets.push({ startLine: start, endLine: end, address: addr, lines, length: lines.length });
+            // Skip past this gadget
+            for (let t = i + patterns.length; t < total; t++) {
+                if (currentInstructionLines[t].rawIndex > end) { i = t - 1; break; }
+            }
+        }
+        return gadgets;
+    }
+
+    // ── Render — render ALL at once using chunked HTML build ────────
+    function sortGadgets(gadgets, by) {
+        if (by === 'addr') return [...gadgets].sort((a,b) => (parseInt(a.address,16)||0)-(parseInt(b.address,16)||0));
+        if (by === 'len')  return [...gadgets].sort((a,b) => a.length - b.length);
+        return gadgets;
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;');
+    }
+
+    function renderGadgets(gadgets, sortBy = currentSort) {
+        let sorted = sortGadgets(gadgets, sortBy);
+        if (!sorted.length) {
+            resultsDiv.innerHTML = `<pre style="margin:0;color:#4a6080;">// No gadgets found.</pre>`;
+            return;
+        }
+        // Build all HTML in one string — fast even for thousands of gadgets
+        let parts = [];
+        for (let g of sorted) {
+            let text = escapeHtml(g.lines.join('\n'));
+            let rawText = g.lines.join('\n').replace(/"/g,'&quot;');
+            parts.push(
+                `<div class="gadget-block">` +
+                `<div class="gadget-header">` +
+                `<span>📍 ${g.address || '?'} · lines ${g.startLine+1}–${g.endLine+1} · len ${g.length}</span>` +
+                `<button class="copy-gadget-btn" onclick="copyGadget(this,'${rawText.replace(/\n/g,'\\n').replace(/'/g,"\\x27")}')">📋 Copy</button>` +
+                `</div>` +
+                `<div class="gadget-line">${text}</div>` +
+                `</div>`
+            );
+        }
+        resultsDiv.innerHTML = parts.join('');
+    }
+
+    window.copyGadget = function(btn, text) {
+        navigator.clipboard.writeText(text.replace(/\\n/g,'\n')).then(() => {
+            btn.textContent = '✅ Copied!';
+            setAction('📋 Gadget copied');
+            setTimeout(() => btn.textContent = '📋 Copy', 1500);
+        }).catch(() => setAction('❌ Copy failed', true));
+    };
+
+    // ── Search ──────────────────────────────────────────────────────
+    async function performSearch() {
+        if (!currentRawLines.length) {
+            setAction("⚠️ Upload a disassembly file first", true);
+            return;
+        }
+        let raw = instructionsTextarea.value.trim();
+        if (!raw) { setAction("⚠️ Enter instructions", true); return; }
+        let patterns = raw.split(/\r?\n/).map(l=>normalizeInstruction(l.trim())).filter(l=>l);
+        if (!patterns.length) { setAction("⚠️ No valid instructions", true); return; }
+        setAction("🔍 Searching…");
+        await new Promise(r=>setTimeout(r,10));
+        try {
+            let gadgets = findAllGadgets(patterns);
+            lastGadgets = gadgets;
+            renderGadgets(gadgets);
+            setGadgetCount(gadgets.length);
+            setAction(gadgets.length ? `✅ Found ${gadgets.length} gadget(s)` : `✅ No gadgets found`);
+        } catch(e) {
+            setAction("❌ Search error: " + e.message, true);
+        }
+    }
+
+    // ── File load ───────────────────────────────────────────────────
+    function loadFile(file) {
+        setDisasState('loading');
+        setAction("⏳ Reading file…");
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            setTimeout(() => {
+                currentContent = e.target.result;
+                currentRawLines = currentContent.split(/\r?\n/);
+                currentInstructionLines = buildInstructionIndex(currentRawLines);
+                setDisasState('loaded', {
+                    name: file.name,
+                    lines: currentRawLines.length,
+                    instrs: currentInstructionLines.length,
+                    size: new Blob([currentContent]).size
+                });
+                setAction("✅ File loaded");
+                resultsDiv.innerHTML = `<pre style="margin:0;color:#4a6080;">// File loaded. Enter instructions and click Find.</pre>`;
+                setGadgetCount();
+                uploadBtn.style.animation = 'none';
+            }, 300);
+        };
+        reader.onerror = () => { setDisasState('no-file'); setAction("❌ Error reading file", true); };
+        reader.readAsText(file);
+    }
+
+    function clearAll() {
+        currentRawLines = []; currentInstructionLines = []; currentContent = "";
+        instructionsTextarea.value = ""; lastGadgets = []; currentSort = 'len';
+        resultsDiv.innerHTML = `<pre style="margin:0;color:#4a6080;">// Upload a disassembly file and enter instructions to search.</pre>`;
+        setDisasState('no-file');
+        setAction("🧹 Cleared");
+        setGadgetCount();
+        uploadBtn.style.animation = 'pulse 1.5s infinite';
+    }
+
+    // ── Events ──────────────────────────────────────────────────────
+    uploadBtn.onclick = () => {
+        let inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = '.txt,.asm,.dis,.lst,text/plain';
+        inp.onchange = e => { if (e.target.files.length) loadFile(e.target.files[0]); };
+        inp.click();
+    };
+    searchBtn.onclick = performSearch;
+    clearBtn.onclick = clearAll;
+    helpBtn.onclick = () => helpPanel.classList.toggle('show');
+    sortAddrBtn.onclick = () => {
+        if (!lastGadgets.length) { setAction("⚠️ Search first", true); return; }
+        currentSort = 'addr'; renderGadgets(lastGadgets, 'addr'); setAction("📊 Sorted by address");
+    };
+    sortLenBtn.onclick = () => {
+        if (!lastGadgets.length) { setAction("⚠️ Search first", true); return; }
+        currentSort = 'len'; renderGadgets(lastGadgets, 'len'); setAction("📏 Sorted by length");
+    };
+    copyAllBtn.onclick = () => {
+        if (!lastGadgets.length) { setAction("⚠️ No gadgets to copy", true); return; }
+        let sorted = sortGadgets(lastGadgets, currentSort);
+        let txt = sorted.map(g=>g.lines.join('\n')).join('\n\n'+'='.repeat(50)+'\n\n');
+        navigator.clipboard.writeText(txt).then(() => setAction(`📋 Copied all ${sorted.length} gadgets`))
+            .catch(() => setAction("❌ Copy failed", true));
+    };
+    instructionsTextarea.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) performSearch();
+    });
+
+    setDisasState('no-file');
+    setAction("✅ Ready");
+</script>
+</body>
+</html>
