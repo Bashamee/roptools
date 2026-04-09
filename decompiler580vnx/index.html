@@ -1,83 +1,85 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=yes"
-    />
-    <title>Decompiler fx-580VN X · Bashame's ROP Tools</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <div class="card">
-      <div class="header">
-        <div class="logo-area">
-          <h1>
-            <i class="fa-solid fa-gear"></i> Decompiler fx-580VN X · Bashame's
-            ROP Tools
-          </h1>
-        </div>
-        <div class="credit">cre: @Bashamee</div>
-      </div>
-      <div class="toolbar">
-        <button id="decompileBtn">
-          <i class="fa-solid fa-gear"></i> DECOMPILE
-        </button>
-        <button id="pasteBtn" class="paste-btn">
-          <i class="fa-solid fa-clipboard"></i> PASTE
-        </button>
-        <button id="copyBtn" class="copy-btn">
-          <i class="fa-solid fa-file"></i> COPY OUTPUT
-        </button>
-        <button id="clearBtn" class="clear-btn">
-          <i class="fa-solid fa-trash"></i> CLEAR
-        </button>
-        <input
-          type="text"
-          id="startAddrInput"
-          class="addr-input"
-          value="d730"
-          placeholder="start addr"
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=yes"
         />
-        <div class="mode-switch">
-          <button id="modeDetailBtn" class="mode-btn active">
-            <i class="fa-solid fa-palette"></i> Detailed
-          </button>
-          <button id="modeSimpleBtn" class="mode-btn">
-            <i class="fa-solid fa-file"></i> Simple
-          </button>
+        <title>Decompiler fx-580VN X · Bashame's ROP Tools</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link rel="stylesheet" href="css/style.css" />
+    </head>
+    <body>
+        <div class="card">
+            <div class="header">
+                <div class="logo-area">
+                    <h1>
+                        <i class="fa-solid fa-gear"></i> Decompiler fx-580VN X ·
+                        Bashame's ROP Tools
+                    </h1>
+                </div>
+                <div class="credit">cre: @Bashamee</div>
+            </div>
+            <div class="toolbar">
+                <button id="decompileBtn">
+                    <i class="fa-solid fa-gear"></i> DECOMPILE
+                </button>
+                <button id="pasteBtn" class="paste-btn">
+                    <i class="fa-solid fa-clipboard"></i> PASTE
+                </button>
+                <button id="copyBtn" class="copy-btn">
+                    <i class="fa-solid fa-file"></i> COPY OUTPUT
+                </button>
+                <button id="clearBtn" class="clear-btn">
+                    <i class="fa-solid fa-trash"></i> CLEAR
+                </button>
+                <input
+                    type="text"
+                    id="startAddrInput"
+                    class="addr-input"
+                    value="d730"
+                    placeholder="start addr"
+                />
+                <div class="mode-switch">
+                    <button id="modeDetailBtn" class="mode-btn active">
+                        <i class="fa-solid fa-palette"></i> Detailed
+                    </button>
+                    <button id="modeSimpleBtn" class="mode-btn">
+                        <i class="fa-solid fa-file"></i> Simple
+                    </button>
+                </div>
+                <a href="../" style="text-decoration: none"
+                    ><button class="home-btn">
+                        <i class="fa-solid fa-house"></i> Home
+                    </button></a
+                >
+            </div>
+            <div class="input-container">
+                <label><i class="fa-solid fa-microchip"></i> PROGRAM HEX</label>
+                <textarea
+                    id="hexInput"
+                    rows="5"
+                    placeholder="d0 08 33 30 e0 a0 30 30 60 8c 30 30 ..."
+                ></textarea>
+            </div>
+            <div class="output-container">
+                <label
+                    ><i class="fa-solid fa-wrench"></i> ASSEMBLY OUTPUT</label
+                >
+                <div class="status-bar">
+                    <div class="status" id="statusMsg">
+                        <i class="fa-solid fa-check"></i> Ready
+                    </div>
+                    <div class="stats" id="statsMsg"></div>
+                </div>
+                <div id="outputList" class="output-list"></div>
+            </div>
         </div>
-        <a href="../" style="text-decoration: none"
-          ><button class="home-btn">
-            <i class="fa-solid fa-house"></i> Home
-          </button></a
-        >
-      </div>
-      <div class="input-container">
-        <label><i class="fa-solid fa-microchip"></i> PROGRAM HEX</label>
-        <textarea
-          id="hexInput"
-          rows="5"
-          placeholder="d0 08 33 30 e0 a0 30 30 60 8c 30 30 ..."
-        ></textarea>
-      </div>
-      <div class="output-container">
-        <label><i class="fa-solid fa-wrench"></i> ASSEMBLY OUTPUT</label>
-        <div class="status-bar">
-          <div class="status" id="statusMsg">
-            <i class="fa-solid fa-check"></i> Ready
-          </div>
-          <div class="stats" id="statsMsg"></div>
-        </div>
-        <div id="outputList" class="output-list"></div>
-      </div>
-    </div>
 
-    <script src="js/main.js"></script>
-  </body>
+        <script src="js/main.js"></script>
+    </body>
 </html>

@@ -1,111 +1,112 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=yes"
-    />
-    <title>Find Gadget · Bashame's ROP Tools</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <div class="card">
-      <div class="header">
-        <h1>
-          <i class="fa-solid fa-magnifying-glass"></i> Find Gadget · Bashame's
-          ROP Tools
-        </h1>
-        <span class="credit">cre: @Bashamee</span>
-      </div>
-      <div class="toolbar">
-        <button id="uploadBtn" class="upload-btn">
-          <i class="fa-solid fa-folder-open"></i> Upload disassembly
-        </button>
-        <button id="helpBtn" class="help-btn">
-          <i class="fa-solid fa-circle-question"></i> Help
-        </button>
-        <button id="sortAddrBtn" class="sort-btn">
-          <i class="fa-solid fa-chart-bar"></i> Sort by address
-        </button>
-        <button id="sortLenBtn" class="sort-btn">
-          <i class="fa-solid fa-ruler"></i> Sort by length
-        </button>
-        <button id="copyAllBtn" class="copy-all-btn">
-          <i class="fa-solid fa-clipboard"></i> Copy all
-        </button>
-        <button id="clearBtn" class="clear-btn">
-          <i class="fa-solid fa-trash"></i> Clear
-        </button>
-        <a href="../" style="text-decoration: none"
-          ><button class="home-btn">
-            <i class="fa-solid fa-house"></i> Home
-          </button></a
-        >
-      </div>
-      <div class="disas-bar">
-        <div class="disas-badge no-file" id="disasBadge">
-          <span class="dot"></span
-          ><span id="disasBadgeText">No disassembly loaded</span>
-        </div>
-        <div
-          id="disasStats"
-          style="display: flex; gap: 6px; flex-wrap: wrap"
-        ></div>
-      </div>
-      <div class="search-section">
-        <div class="search-group">
-          <label
-            >INSTRUCTIONS — one per line. Use
-            <code style="color: #8bcb8b">$</code> as wildcard for register
-            number (e.g. <code>l er$, [er$]</code> matches
-            <code>l er10, [er8]</code>). Without <code>$</code>, it's prefix
-            match.</label
-          >
-          <textarea
-            id="instructionsInput"
-            rows="2"
-            placeholder="pop er$&#10;pop pc"
-          ></textarea>
-        </div>
-        <button id="searchBtn" class="search-btn">
-          <i class="fa-solid fa-search"></i> Find
-        </button>
-      </div>
-      <div id="helpPanel" class="help-panel">
-        <strong>How to use:</strong><br />
-        1. Click <strong>Upload disassembly</strong> to load a .txt / .asm /
-        .dis file.<br />
-        2. Supports two disassembly formats:<br />
-        &nbsp;&nbsp;• <code>asm ; address | opcode</code><br />
-        &nbsp;&nbsp;• <code>address opcode asm</code> (address may include 'H'
-        suffix)<br />
-        3. Enter instructions to search (one per line).<br />
-        4. <strong>Wildcard <code>$</code></strong> matches any decimal number
-        (0-99) in register names.<br />
-        5. Without <code>$</code>, matching is <em>prefix-based</em>.<br />
-        6. Click <strong>Find</strong>. Each result ends at <code>pop pc</code>,
-        <code>rt</code>, or <code>rti</code>.<br />
-        7. Use <strong>Sort by address / length</strong> to reorder.
-        <strong>Copy all</strong> copies every found gadget.
-      </div>
-      <div id="resultsContainer" class="results-container">
-        <pre style="margin: 0; color: #4a6080">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=yes"
+        />
+        <title>Find Gadget · Bashame's ROP Tools</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link rel="stylesheet" href="css/style.css" />
+    </head>
+    <body>
+        <div class="card">
+            <div class="header">
+                <h1>
+                    <i class="fa-solid fa-magnifying-glass"></i> Find Gadget ·
+                    Bashame's ROP Tools
+                </h1>
+                <span class="credit">cre: @Bashamee</span>
+            </div>
+            <div class="toolbar">
+                <button id="uploadBtn" class="upload-btn">
+                    <i class="fa-solid fa-folder-open"></i> Upload disassembly
+                </button>
+                <button id="helpBtn" class="help-btn">
+                    <i class="fa-solid fa-circle-question"></i> Help
+                </button>
+                <button id="sortAddrBtn" class="sort-btn">
+                    <i class="fa-solid fa-chart-bar"></i> Sort by address
+                </button>
+                <button id="sortLenBtn" class="sort-btn">
+                    <i class="fa-solid fa-ruler"></i> Sort by length
+                </button>
+                <button id="copyAllBtn" class="copy-all-btn">
+                    <i class="fa-solid fa-clipboard"></i> Copy all
+                </button>
+                <button id="clearBtn" class="clear-btn">
+                    <i class="fa-solid fa-trash"></i> Clear
+                </button>
+                <a href="../" style="text-decoration: none"
+                    ><button class="home-btn">
+                        <i class="fa-solid fa-house"></i> Home
+                    </button></a
+                >
+            </div>
+            <div class="disas-bar">
+                <div class="disas-badge no-file" id="disasBadge">
+                    <span class="dot"></span
+                    ><span id="disasBadgeText">No disassembly loaded</span>
+                </div>
+                <div
+                    id="disasStats"
+                    style="display: flex; gap: 6px; flex-wrap: wrap"
+                ></div>
+            </div>
+            <div class="search-section">
+                <div class="search-group">
+                    <label
+                        >INSTRUCTIONS — one per line. Use
+                        <code style="color: #8bcb8b">$</code> as wildcard for
+                        register number (e.g. <code>l er$, [er$]</code> matches
+                        <code>l er10, [er8]</code>). Without <code>$</code>,
+                        it's prefix match.</label
+                    >
+                    <textarea
+                        id="instructionsInput"
+                        rows="2"
+                        placeholder="pop er$&#10;pop pc"
+                    ></textarea>
+                </div>
+                <button id="searchBtn" class="search-btn">
+                    <i class="fa-solid fa-search"></i> Find
+                </button>
+            </div>
+            <div id="helpPanel" class="help-panel">
+                <strong>How to use:</strong><br />
+                1. Click <strong>Upload disassembly</strong> to load a .txt /
+                .asm / .dis file.<br />
+                2. Supports two disassembly formats:<br />
+                &nbsp;&nbsp;• <code>asm ; address | opcode</code><br />
+                &nbsp;&nbsp;• <code>address opcode asm</code> (address may
+                include 'H' suffix)<br />
+                3. Enter instructions to search (one per line).<br />
+                4. <strong>Wildcard <code>$</code></strong> matches any decimal
+                number (0-99) in register names.<br />
+                5. Without <code>$</code>, matching is
+                <em>prefix-based</em>.<br />
+                6. Click <strong>Find</strong>. Each result ends at
+                <code>pop pc</code>, <code>rt</code>, or <code>rti</code>.<br />
+                7. Use <strong>Sort by address / length</strong> to reorder.
+                <strong>Copy all</strong> copies every found gadget.
+            </div>
+            <div id="resultsContainer" class="results-container">
+                <pre style="margin: 0; color: #4a6080">
 // Upload a disassembly file and enter instructions to search.</pre
-        >
-      </div>
-      <div class="status-bar">
-        <div class="status-msg" id="statusAction">
-          <i class="fa-solid fa-check"></i> Ready
+                >
+            </div>
+            <div class="status-bar">
+                <div class="status-msg" id="statusAction">
+                    <i class="fa-solid fa-check"></i> Ready
+                </div>
+                <div class="status-count" id="statusGadgets"></div>
+            </div>
         </div>
-        <div class="status-count" id="statusGadgets"></div>
-      </div>
-    </div>
 
-    <script src="js/main.js"></script>
-  </body>
+        <script src="js/main.js"></script>
+    </body>
 </html>
