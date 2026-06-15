@@ -1,2 +1,4 @@
-good find gadgets tool ánd better decomp (only for casio fx580vnx)
-btw link: https://bashamee.github.io/roptools/
+Decompiler for fx580vnx
+web: https://bashamee.github.io/roptools/
+
+yêu cầu ghi nguồn khi lấy và thêm tool vào các dự án khác
