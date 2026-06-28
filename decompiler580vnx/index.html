@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Decompiler fx-580VN X · Bashame's ROP Tools</title>
+    <!-- PWA Support -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0d12">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Decompiler fx-580VN X">
+    <meta name="description" content="Decompiler for fx-580VN X calculator firmware / ROP chain analysis. Part of Bashame's ROP Tools.">
     <style>
         :root {
             /* 🌸 Pink Theme (Nature) */
@@ -1625,6 +1632,30 @@
         outputListEl.innerHTML = '<div style="color:var(--text-muted); padding:12px;">// Press DECOMPILE</div>';
     }
 
+</script>
+
+<!-- PWA Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((registration) => {
+          console.log('[PWA] ServiceWorker registration successful with scope: ', registration.scope);
+        })
+        .catch((error) => {
+          console.log('[PWA] ServiceWorker registration failed: ', error);
+        });
+    });
+  }
+
+  // Optional: Add to home screen prompt (basic)
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // You can show a custom install button here if desired
+    console.log('[PWA] beforeinstallprompt fired - App can be installed');
+  });
 </script>
 </body>
 </html>
