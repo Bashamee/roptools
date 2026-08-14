@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Find Gadget · Bashame's ROP Tools</title>
+    <style>
+        :root {
+            --bg:         #080c14;
+            --glass:      rgba(255,255,255,0.026);
+            --glass-hov:  rgba(255,255,255,0.048);
+            --border:     rgba(255,255,255,0.052);
+            --border-hov: rgba(255,255,255,0.096);
+            --text:       rgba(210,224,255,0.82);
+            --text-dim:   rgba(140,162,210,0.65);
+            --text-faint: rgba(90,110,160,0.5);
+            --blue:       #5b9cf6;
+            --green:      #4ade80;
+            --teal:       #2dd4bf;
+            --gold:       #f0c060;
+            --ease:       cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 18% 18%, rgba(91,156,246,0.055) 0%, transparent 42%),
+                radial-gradient(ellipse at 82% 82%, rgba(74,222,128,0.04)  0%, transparent 42%);
+            font-family: ui-monospace, 'Cascadia Mono', 'Fira Code', Consolas, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* ── CARD ──────────────────────────────────────────────── */
+        .card {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(9, 13, 22, 0.86);
+            backdrop-filter: blur(48px) saturate(160%);
+            -webkit-backdrop-filter: blur(48px) saturate(160%);
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            height: fit-content;
+            box-shadow:
+                0 48px 96px rgba(0,0,0,0.6),
+                0 0 0 0.5px rgba(255,255,255,0.022) inset;
+        }
+
+        /* ── HEADER ────────────────────────────────────────────── */
+        .header {
+            padding: 14px 20px;
+            background: rgba(0,0,0,0.18);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text);
+            letter-spacing: 0.015em;
+        }
+
+        .credit {
+            color: var(--text-faint);
+            font-size: 0.74rem;
+        }
+
+        /* ── TOOLBAR ───────────────────────────────────────────── */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            padding: 9px 18px;
+            background: rgba(0,0,0,0.1);
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+        /* ── BUTTONS (base) ────────────────────────────────────── */
+        button {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 5px 14px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.73rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: background 0.16s var(--ease),
+                        border-color 0.16s var(--ease),
+                        color 0.16s var(--ease),
+                        transform 0.16s var(--ease),
+                        box-shadow 0.16s var(--ease);
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: var(--glass-hov);
+            border-color: var(--border-hov);
+            color: var(--text);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.28);
+        }
+
+        button:active {
+            transform: translateY(0px);
+            transition-duration: 0.06s;
+        }
+
+        /* button variants */
+        .upload-btn {
+            background: rgba(74,222,128,0.07);
+            border-color: rgba(74,222,128,0.18);
+            color: rgba(100,230,150,0.85);
+            animation: pulse-green 2.2s ease-in-out infinite;
+        }
+        .upload-btn:hover {
+            background: rgba(74,222,128,0.13);
+            border-color: rgba(74,222,128,0.32);
+            color: #6ee7a0;
+            box-shadow: 0 4px 16px rgba(74,222,128,0.1);
+        }
+
+        .sort-btn {
+            background: rgba(91,156,246,0.05);
+            border-color: rgba(91,156,246,0.14);
+            color: rgba(130,175,255,0.72);
+        }
+        .sort-btn:hover {
+            background: rgba(91,156,246,0.1);
+            border-color: rgba(91,156,246,0.26);
+            color: #8ab8ff;
+            box-shadow: 0 4px 16px rgba(91,156,246,0.1);
+        }
+
+        .search-btn {
+            background: rgba(91,156,246,0.1);
+            border-color: rgba(91,156,246,0.24);
+            color: rgba(120,175,255,0.9);
+            padding: 7px 22px;
+            font-size: 0.76rem;
+        }
+        .search-btn:hover {
+            background: rgba(91,156,246,0.17);
+            border-color: rgba(91,156,246,0.38);
+            color: #9dc5ff;
+            box-shadow: 0 4px 20px rgba(91,156,246,0.14);
+        }
+
+        .home-btn { color: var(--text-dim); }
+
+        /* ── DISAS BAR ─────────────────────────────────────────── */
+        .disas-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 18px;
+            background: rgba(0,0,0,0.12);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .disas-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.28s var(--ease);
+        }
+
+        .disas-badge.no-file {
+            background: rgba(100,80,180,0.08);
+            color: rgba(148,128,210,0.72);
+            border: 1px solid rgba(110,90,180,0.18);
+        }
+        .disas-badge.loading {
+            background: rgba(74,222,128,0.07);
+            color: rgba(100,220,150,0.85);
+            border: 1px solid rgba(74,222,128,0.2);
+        }
+        .disas-badge.loaded {
+            background: rgba(74,222,128,0.07);
+            color: rgba(100,220,150,0.9);
+            border: 1px solid rgba(74,222,128,0.18);
+        }
+
+        .dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .disas-badge.loaded .dot {
+            background: #4ade80;
+            box-shadow: 0 0 6px rgba(74,222,128,0.65);
+        }
+        .disas-badge.no-file .dot {
+            background: rgba(130,110,200,0.55);
+        }
+
+        .spinner {
+            width: 10px; height: 10px;
+            border: 1.5px solid rgba(74,222,128,0.18);
+            border-top-color: #4ade80;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .stat-chip {
+            font-size: 0.66rem;
+            color: var(--text-faint);
+            background: rgba(255,255,255,0.034);
+            border: 1px solid var(--border);
+            padding: 2px 9px;
+            border-radius: 10px;
+        }
+
+        /* ── SEARCH SECTION ────────────────────────────────────── */
+        .search-section {
+            padding: 10px 18px;
+            background: rgba(0,0,0,0.07);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .search-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-group label {
+            font-size: 0.62rem;
+            color: var(--text-faint);
+            letter-spacing: 0.05em;
+        }
+
+        textarea {
+            background: rgba(0,0,0,0.28);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 9px 13px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.85rem;
+            width: 100%;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.18s var(--ease),
+                        box-shadow   0.18s var(--ease);
+        }
+        textarea:focus {
+            border-color: rgba(91,156,246,0.38);
+            box-shadow: 0 0 0 3px rgba(91,156,246,0.07);
+        }
+        textarea::placeholder { color: var(--text-faint); }
+
+        /* ── RESULTS ───────────────────────────────────────────── */
+        .results-container {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin: 8px 16px 6px;
+            padding: 10px 14px;
+            overflow-y: auto;
+            height: 52vh;
+            font-family: inherit;
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: rgba(195,215,255,0.78);
+        }
+
+        /* gadget blocks */
+        .gadget-block {
+            border-left: 2px solid rgba(80,120,220,0.35);
+            margin-bottom: 12px;
+            padding: 7px 12px;
+            background: rgba(255,255,255,0.016);
+            border-radius: 8px;
+            transition: background 0.14s var(--ease),
+                        border-color 0.14s var(--ease);
+            animation: fade-up 0.18s var(--ease) both;
+        }
+        .gadget-block:hover {
+            background: rgba(255,255,255,0.03);
+            border-color: rgba(91,156,246,0.42);
+        }
+
+        .gadget-header {
+            color: rgba(238,192,78,0.82);
+            font-size: 0.73rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+        }
+
+        .copy-gadget-btn {
+            background: rgba(255,255,255,0.04) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 6px !important;
+            padding: 2px 9px !important;
+            font-size: 0.65rem !important;
+            cursor: pointer;
+            color: var(--teal) !important;
+            font-family: inherit;
+            transition: all 0.13s var(--ease) !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        .copy-gadget-btn:hover {
+            background: rgba(45,212,191,0.08) !important;
+            border-color: rgba(45,212,191,0.22) !important;
+            color: #38e8d4 !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* instruction lines */
+        .g-line   { white-space: pre-wrap; color: rgba(180,208,255,0.76); }
+        .g-soft   { white-space: pre-wrap; color: rgba(210,188,96,0.84); }
+        .g-hard-b { white-space: pre-wrap; color: rgba(238,108,88,0.84); }
+
+        /* expand button & panel */
+        .xbtn {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(45,212,191,0.18) !important;
+            border-radius: 6px;
+            padding: 1px 7px;
+            font-size: 0.67rem;
+            cursor: pointer;
+            color: var(--teal);
+            font-family: inherit;
+            margin-left: 8px;
+            vertical-align: middle;
+            transition: all 0.12s var(--ease);
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        .xbtn:hover {
+            background: rgba(45,212,191,0.08);
+            border-color: rgba(45,212,191,0.28) !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        .xbtn.open {
+            background: rgba(45,212,191,0.1);
+            color: #3de0cc;
+            border-color: rgba(45,212,191,0.28) !important;
+        }
+
+        .xpanel {
+            display: none;
+            margin: 3px 0 4px 26px;
+            background: rgba(0,0,0,0.22);
+            border-left: 2px solid rgba(45,180,160,0.22);
+            border-radius: 5px;
+            padding: 5px 10px;
+        }
+        .xpanel .xl    { white-space: pre-wrap; color: rgba(96,172,194,0.72); font-size: 0.82em; }
+        .xpanel .xnote { color: rgba(72,116,136,0.7); font-size: 0.78em; font-style: italic; padding: 2px 0; }
+
+        /* ── STATUS BAR ────────────────────────────────────────── */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 18px 13px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .status-msg {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            background: rgba(255,255,255,0.028);
+            border: 1px solid var(--border);
+            padding: 3px 11px;
+            border-radius: 7px;
+            transition: color 0.2s;
+        }
+
+        .status-count {
+            font-size: 0.7rem;
+            color: rgba(100,224,140,0.85);
+            background: rgba(74,222,128,0.055);
+            border: 1px solid rgba(74,222,128,0.15);
+            padding: 3px 11px;
+            border-radius: 7px;
+        }
+
+        /* pagination */
+        .pg-wrap { display: none; align-items: center; gap: 6px; }
+
+        .pg-btn {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 3px 12px;
+            border-radius: 7px;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.7rem;
+        }
+        .pg-btn:hover:not(:disabled) {
+            background: var(--glass-hov);
+            border-color: var(--border-hov);
+            color: var(--text);
+            transform: translateY(-1px);
+        }
+        .pg-btn:disabled {
+            opacity: 0.26;
+            cursor: default;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .pg-info {
+            font-size: 0.68rem;
+            color: var(--text-faint);
+            background: rgba(255,255,255,0.028);
+            border: 1px solid var(--border);
+            padding: 3px 11px;
+            border-radius: 7px;
+            white-space: nowrap;
+        }
+
+        /* ── ANIMATIONS ────────────────────────────────────────── */
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0   rgba(74,222,128,0);    }
+            50%       { box-shadow: 0 0 0 4px rgba(74,222,128,0.12); }
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: translateY(0);   }
+        }
+
+        /* ── SCROLLBAR ─────────────────────────────────────────── */
+        ::-webkit-scrollbar       { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.09); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>Find Gadget · Bashame's ROP Tools</h1>
+        <span class="credit">cre: @Bashamee</span>
+    </div>
+
+    <div class="toolbar">
+        <button id="uploadBtn" class="upload-btn">Upload disassembly</button>
+        <button id="sortAddrBtn" class="sort-btn">Sort by address</button>
+        <button id="sortLenBtn"  class="sort-btn">Sort by length</button>
+        <a href="../" style="text-decoration:none;"><button class="home-btn">Home</button></a>
+    </div>
+
+    <div class="disas-bar">
+        <div class="disas-badge no-file" id="disasBadge"><span class="dot"></span><span>No disassembly loaded</span></div>
+        <div id="disasStats" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+
+    <div class="search-section">
+        <div class="search-group">
+            <textarea id="instructionsInput" rows="3" placeholder="pop ern&#10;rt"></textarea>
+        </div>
+        <button id="searchBtn" class="search-btn">Find</button>
+    </div>
+
+    <div id="resultsContainer" class="results-container">
+        <pre style="margin:0;color:#4a6080;">// Upload a disassembly file and enter instructions to search.</pre>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-msg" id="statusAction">Ready</div>
+        <div class="pg-wrap" id="pgWrap">
+            <button class="pg-btn" id="prevBtn">‹ Prev</button>
+            <span  class="pg-info" id="pgInfo">Page 1 / 1</span>
+            <button class="pg-btn" id="nextBtn">Next ›</button>
+        </div>
+        <div class="status-count" id="statusGadgets"></div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let rawLines       = [];   // all raw lines of the disassembly file
+let instrIndex     = [];   // [{rawIndex, instr, normalized}]
+let fileContent    = "";
+let lastGadgets    = [];   // all gadgets found in last search
+let copyBuf        = [];   // gadget texts for copy buttons (reset each render)
+let currentSort    = 'len';
+let currentPage    = 0;
+let expandCounter  = 0;
+const PAGE_SIZE    = 30;
+
+// ═══════════════════════════════════════════════════════
+//  DOM REFS
+// ═══════════════════════════════════════════════════════
+const resultsDiv  = document.getElementById('resultsContainer');
+const statusMsg   = document.getElementById('statusAction');
+const statusCount = document.getElementById('statusGadgets');
+const disasBadge  = document.getElementById('disasBadge');
+const disasStats  = document.getElementById('disasStats');
+const uploadBtn   = document.getElementById('uploadBtn');
+const searchBtn   = document.getElementById('searchBtn');
+const sortAddrBtn = document.getElementById('sortAddrBtn');
+const sortLenBtn  = document.getElementById('sortLenBtn');
+const instrTA     = document.getElementById('instructionsInput');
+const pgWrap      = document.getElementById('pgWrap');
+const prevBtn     = document.getElementById('prevBtn');
+const nextBtn     = document.getElementById('nextBtn');
+const pgInfo      = document.getElementById('pgInfo');
+
+// ═══════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════
+function setAction(text, isErr = false) {
+    statusMsg.innerHTML = text;
+    statusMsg.style.color = isErr ? '#f28b82' : '#8aa0b8';
+}
+function setCount(n) {
+    statusCount.textContent = n !== undefined ? `${n} gadget(s) found` : '';
+}
+function setDisasState(state, data = {}) {
+    disasBadge.className = 'disas-badge ' + state;
+    if (state === 'no-file') {
+        disasBadge.innerHTML = `<span class="dot"></span><span>No disassembly loaded</span>`;
+        disasStats.innerHTML = '';
+    } else if (state === 'loading') {
+        disasBadge.innerHTML = `<span class="spinner"></span><span>Loading…</span>`;
+        disasStats.innerHTML = '';
+    } else if (state === 'loaded') {
+        const { name, lines, instrs, size } = data;
+        disasBadge.innerHTML = `<span class="dot"></span><span>${esc(name)}</span>`;
+        disasStats.innerHTML =
+            `<span class="stat-chip">${lines.toLocaleString()} lines</span>` +
+            `<span class="stat-chip">${instrs.toLocaleString()} instructions</span>` +
+            `<span class="stat-chip">${(size/1024).toFixed(1)} KB</span>`;
+    }
+}
+function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// ═══════════════════════════════════════════════════════
+//  INSTRUCTION NORMALIZATION & MATCHING
+// ═══════════════════════════════════════════════════════
+function norm(instr) {
+    return instr.replace(/\s+/g, '').toLowerCase();
+}
+
+/**
+ * Build regex from a normalized pattern.
+ * 'n' immediately after 'r' (register wildcard) → (\d{1,2})
+ * e.g. "poper n" → norm → "popern" → "poper(\d{1,2})"
+ */
+function patternToRegex(np) {
+    // escape regex special chars first
+    let e = np.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // 'rn' → digit wildcard (covers rn, ern, xrn, qrn)
+    let r = e.replace(/r(n)/g, 'r(\\d{1,2})');
+    return new RegExp('^' + r + '$');
+}
+
+function hasWildcard(np) { return /rn/.test(np); }
+
+function matchPat(normInstr, np) {
+    if (!np) return true;
+    if (hasWildcard(np)) return patternToRegex(np).test(normInstr);
+    return normInstr.startsWith(np);
+}
+
+// ═══════════════════════════════════════════════════════
+//  LINE PARSING
+// ═══════════════════════════════════════════════════════
+function isLabel(line) {
+    let t = line.trim();
+    return /^\.l_[0-9a-f]+:$/i.test(t) ||
+           (t.endsWith(':') && !t.includes(';') && !/^[0-9a-f]/i.test(t));
+}
+
+function extractInstr(line) {
+    let t = line.trim();
+    if (!t || t.startsWith(';')) return null;
+    if (isLabel(line)) return null;
+
+    // Format 1: asm ; address | opcode
+    let si = line.indexOf(';');
+    if (si !== -1) {
+        let i = line.substring(0, si).trim();
+        if (i) return i;
+    }
+    // Format 2: address opcode asm
+    let m = line.match(/^([^ \t]+)[ \t]+([0-9A-Fa-f ]+?)[ \t]+(.+)$/);
+    if (m && m[3].trim()) return m[3].trim();
+
+    // Fallback: strip leading hex tokens
+    let toks = t.split(/\s+/);
+    while (toks.length && /^[0-9A-Fa-f:H]+$/i.test(toks[0])) toks.shift();
+    return toks.length ? toks.join(' ') : null;
+}
+
+function buildIndex(rl) {
+    let res = [];
+    for (let i = 0; i < rl.length; i++) {
+        let instr = extractInstr(rl[i]);
+        if (instr !== null)
+            res.push({ rawIndex: i, instr, normalized: norm(instr) });
+    }
+    return res;
+}
+
+// ═══════════════════════════════════════════════════════
+//  BRANCH CLASSIFICATION
+//  hard_end : pop pc / rt / rti / brk         → gadget terminates, no expand
+//  hard_b   : B <addr> / BAL <addr>           → gadget terminates, show expand
+//  soft     : BL / BEQ / BNE / BGT / BLT …   → show expand, continue scanning
+//  none     : anything else
+// ═══════════════════════════════════════════════════════
+
+// All soft (non-terminating) branch mnemonics, longest first to avoid prefix clashes
+const SOFT_B = [
+    'bgts','bges','blts','bles',               // 4-char conditional
+    'beq','bne','blt','bgt','ble','bge',       // 3-char conditional
+    'bnv','bov','bps','bns','bnc','bcy',
+    'bnz','bz','bzf',
+    'bc',                                       // BC cond,addr  (generic form)
+    'bl',                                       // branch and link (function call)
+].sort((a,b) => b.length - a.length);
+
+function branchType(n) {
+    if (n === 'poppc' || n === 'rt' || n === 'rti') return 'hard_end';
+    if (n.startsWith('brk'))                         return 'hard_end';
+    if (!n.startsWith('b'))                          return 'none';
+
+    // Check all known soft branch mnemonics (longest first)
+    for (let mn of SOFT_B) {
+        if (!n.startsWith(mn)) continue;
+        let rest = n.slice(mn.length);
+        // After the mnemonic: address (hex/label/local), register, comma (BC form), or end
+        if (!rest || /^[0-9a-f,._]/.test(rest) || /^[a-z]/.test(rest) ||
+            rest.startsWith('er') || rest.startsWith('xr')) {
+            return 'soft';
+        }
+    }
+
+    // BAL (branch always) → hard stop, show expand
+    if (n.startsWith('bal')) {
+        let rest = n.slice(3);
+        if (!rest || /^[0-9a-f._]/.test(rest) || /^[a-z]/.test(rest) ||
+            rest.startsWith('er') || rest.startsWith('xr')) return 'hard_b';
+    }
+
+    // B <hex_address> or B ER<n> → hard stop, show expand
+    // Only when everything after 'b' is pure hex digits, or starts with 'er'/'xr'
+    let afterB = n.slice(1);
+    if (/^[0-9a-f]+$/.test(afterB) || afterB.startsWith('er') || afterB.startsWith('xr')) {
+        return 'hard_b';
+    }
+
+    return 'none';
+}
+
+function isHard(n) { let t = branchType(n); return t === 'hard_end' || t === 'hard_b'; }
+
+// ═══════════════════════════════════════════════════════
+//  BRANCH TARGET EXTRACTION & LOOKUP
+// ═══════════════════════════════════════════════════════
+function branchTarget(instrText) {
+    if (!instrText) return null;
+    let parts = instrText.trim().split(/[\s,]+/).filter(Boolean);
+    if (!parts.length) return null;
+    // "BC cond, addr" → parts[0]='bc', parts[1]=cond, parts[2]=addr
+    if (parts[0].toLowerCase() === 'bc' && parts.length >= 3) return parts[2];
+    return parts.length >= 2 ? parts[1] : null;
+}
+
+function addrOfLine(line) {
+    // segment:offset format: ; 3:DF26 | → "3DF26"
+    let ms = line.match(/;\s*([0-9A-Fa-f]{1,2}):([0-9A-Fa-f]{4,5})\s*\|/);
+    if (ms) return (ms[1] + ms[2]).toUpperCase();
+    // plain hex: ; 230EA |
+    let m = line.match(/;\s*([0-9A-Fa-f]+)\s*\|/);
+    if (m) return m[1].toUpperCase();
+    // line starts with address
+    let m2 = line.match(/^([0-9A-Fa-f]+H?)\b/i);
+    if (m2) return m2[1].replace(/H$/i, '').toUpperCase();
+    return '';
+}
+
+// ─── Label helpers ────────────────────────────────────────
+
+/** Is a trimmed line a "function-level" label (not a local .l_xxx)? */
+function isFuncLabel(trimmed) {
+    return /^[a-zA-Z_][a-zA-Z_0-9]*\s*:/.test(trimmed) && !trimmed.startsWith('.');
+}
+
+/**
+ * From `fromLine` search FORWARD for a label line whose first token matches `subLabel`
+ * (case-insensitive, with or without leading dot, with or without trailing colon).
+ */
+function findForwardLabel(subLabel, fromLine) {
+    let sl = subLabel.toLowerCase().replace(/[: ]+$/, ''); // e.g. ".l_048" or "l_048"
+    let slNoDot = sl.startsWith('.') ? sl.slice(1) : sl;   // "l_048"
+    for (let i = fromLine; i < rawLines.length; i++) {
+        let t = rawLines[i].trim().toLowerCase().replace(/;.*$/, '').trim().replace(/:+$/, '');
+        if (t === sl || t === slNoDot) return i;
+    }
+    return -1;
+}
+
+/**
+ * Resolve a local label like ".l_048":
+ *  1. Search UPWARD from srcLine for the nearest enclosing function label.
+ *  2. From there search FORWARD for the sub-label line.
+ */
+function findLocalLabel(subLabel, srcLine) {
+    let enclosing = 0; // fallback: start of file
+    for (let i = Math.min(srcLine, rawLines.length - 1); i >= 0; i--) {
+        if (isFuncLabel(rawLines[i].trim())) { enclosing = i; break; }
+    }
+    return findForwardLabel(subLabel, enclosing);
+}
+
+/**
+ * Central address/label resolver.
+ * Handles:
+ *   ".l_048"             → local label (search upward for function, then forward)
+ *   "f_2C5F8.l_010"     → compound: find base label/addr, then sub-label forward
+ *   "f_230EA" / "strcpy" → named label (try hex suffix, then exact label-line match)
+ *   "230EA"              → raw hex address
+ *   "3DF26" / "3:DF26"  → hex with optional segment prefix
+ *
+ * srcLine: raw line index of the branch instruction (needed for local labels).
+ */
+function findLineByAddr(addrStr, srcLine) {
+    if (!addrStr) return -1;
+    if (/^(er|xr|qr|r)\d/i.test(addrStr)) return -1; // register → unresolvable
+
+    // ── Case 1: local label like ".l_048"
+    if (addrStr.startsWith('.')) {
+        return findLocalLabel(addrStr, srcLine != null ? srcLine : rawLines.length - 1);
+    }
+
+    // ── Case 2: compound label like "f_2C5F8.l_010"
+    let dotIdx = addrStr.indexOf('.');
+    if (dotIdx !== -1) {
+        let base    = addrStr.slice(0, dotIdx);  // "f_2C5F8"
+        let sub     = addrStr.slice(dotIdx);     // ".l_010"
+        let baseLine = findLineByAddr(base, srcLine);
+        if (baseLine === -1) return -1;
+        return findForwardLabel(sub, baseLine);
+    }
+
+    // ── Case 3: raw hex, named label, or labelled hex (f_230EA, strcpy, …)
+    let rawHex   = addrStr.toLowerCase().replace(/^0x/, '').replace(/h$/i, '');
+    let labelLow = rawHex; // for exact label-name search
+
+    // Extract trailing hex run from labels like "f_230EA" → hexSuffix = "230ea"
+    let hexSuffix = null;
+    let lm = addrStr.match(/^[a-zA-Z_]+([0-9A-Fa-f]{3,})\s*:?\s*$/);
+    if (lm) hexSuffix = lm[1].toLowerCase();
+
+    for (let i = 0; i < rawLines.length; i++) {
+        let ln = rawLines[i];
+
+        // segment:offset comment: ; 3:DF26 |  → combined "3df26"
+        let ms = ln.match(/;\s*([0-9A-Fa-f]{1,2}):([0-9A-Fa-f]{4,5})\s*\|/);
+        if (ms) {
+            let combined = (ms[1] + ms[2]).toLowerCase();
+            if (combined === rawHex || (hexSuffix && combined === hexSuffix)) return i;
+        }
+
+        // plain hex comment: ; 230EA |
+        let m1 = ln.match(/;\s*([0-9A-Fa-f]+)\s*\|/);
+        if (m1) {
+            let a = m1[1].toLowerCase();
+            if (a === rawHex || (hexSuffix && a === hexSuffix)) return i;
+        }
+
+        // line starts with address (format 2)
+        let m2 = ln.match(/^([0-9A-Fa-f]+H?)\b/i);
+        if (m2) {
+            let a = m2[1].replace(/H$/i,'').toLowerCase();
+            if (a === rawHex || (hexSuffix && a === hexSuffix)) return i;
+        }
+
+        // label definition: "f_230EA:" or "strcpy:" at start of line
+        let m3 = ln.match(/^([a-zA-Z_.][a-zA-Z_0-9.]*)\s*:?\s*(?:;.*)?$/);
+        if (m3 && m3[1].toLowerCase() === labelLow) return i;
+    }
+    return -1;
+}
+
+function getDestLines(targetStr, srcLine) {
+    if (!targetStr) return null;
+    let li = findLineByAddr(targetStr, srcLine);
+    if (li === -1) return null;
+    let lines = [];
+    for (let k = li; k < rawLines.length && lines.length < 60; k++) {
+        lines.push(rawLines[k]);
+        let ins = extractInstr(rawLines[k]);
+        if (ins && isHard(norm(ins))) break;
+    }
+    return lines;
+}
+
+// ═══════════════════════════════════════════════════════
+//  PATTERN PARSING (user input → steps)
+// ═══════════════════════════════════════════════════════
+function parseSteps(text) {
+    let steps = [];
+    for (let line of text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)) {
+        if (line === '/') {
+            steps.push({ type: 'gap' });
+        } else if (line.includes('/')) {
+            // same-line: ordered set
+            let parts = line.split('/').map(p => norm(p.trim())).filter(Boolean);
+            if (parts.length >= 2) steps.push({ type: 'oset', parts });
+            else if (parts.length === 1) steps.push({ type: 'instr', n: parts[0] });
+        } else {
+            steps.push({ type: 'instr', n: norm(line) });
+        }
+    }
+    return steps;
+}
+
+function permutations(arr) {
+    if (arr.length <= 1) return [[...arr]];
+    let res = [];
+    for (let i = 0; i < arr.length; i++) {
+        let rest = arr.filter((_, j) => j !== i);
+        for (let p of permutations(rest)) res.push([arr[i], ...p]);
+    }
+    return res;
+}
+
+/** Expand steps with oset into a list of concrete sequences */
+function expandSteps(steps) {
+    let seqs = [[]];
+    for (let s of steps) {
+        if (s.type === 'gap') {
+            seqs = seqs.map(sq => [...sq, { type: 'gap' }]);
+        } else if (s.type === 'instr') {
+            seqs = seqs.map(sq => [...sq, { type: 'instr', n: s.n }]);
+        } else { // oset
+            let perms = permutations(s.parts);
+            let next = [];
+            for (let sq of seqs)
+                for (let p of perms) {
+                    let ns = [...sq];
+                    for (let n of p) ns.push({ type: 'instr', n });
+                    next.push(ns);
+                }
+            seqs = next;
+        }
+    }
+    return seqs;
+}
+
+// ═══════════════════════════════════════════════════════
+//  GADGET COLLECTION
+// ═══════════════════════════════════════════════════════
+function collectGadget(startRaw) {
+    let lines = [], endRaw = startRaw, branches = [];
+    for (let k = startRaw; k < rawLines.length; k++) {
+        let line = rawLines[k];
+        lines.push(line);
+        let ins = extractInstr(line);
+        if (!ins) continue;
+        let ni = norm(ins);
+        let bt = branchType(ni);
+        if (bt === 'hard_end') { endRaw = k; break; }
+        if (bt === 'hard_b') {
+            branches.push({ offset: lines.length - 1, soft: false, instrText: ins, target: branchTarget(ins) });
+            endRaw = k; break;
+        }
+        if (bt === 'soft') {
+            branches.push({ offset: lines.length - 1, soft: true, instrText: ins, target: branchTarget(ins) });
+        }
+        if (lines.length > 400) { endRaw = k; break; }
+    }
+    return { lines, endRaw, branches };
+}
+
+// ═══════════════════════════════════════════════════════
+//  MAIN SEARCH
+// ═══════════════════════════════════════════════════════
+function findAll(seqs) {
+    let map = new Map();
+
+    for (let seq of seqs) {
+        if (!seq.length) continue;
+        let fi = seq.findIndex(s => s.type === 'instr');
+        if (fi === -1) continue;
+        let fn = seq[fi].n;
+
+        for (let i = 0; i < instrIndex.length; i++) {
+            if (!matchPat(instrIndex[i].normalized, fn)) continue;
+
+            // Match the rest of the sequence from i+1
+            let pos = i + 1, afterGap = false, ok = true;
+            for (let si = fi + 1; si < seq.length; si++) {
+                let step = seq[si];
+                if (step.type === 'gap') { afterGap = true; continue; }
+                if (afterGap) {
+                    let found = -1;
+                    for (let k = pos; k < instrIndex.length; k++) {
+                        if (isHard(instrIndex[k].normalized)) break;
+                        if (matchPat(instrIndex[k].normalized, step.n)) { found = k; break; }
+                    }
+                    if (found === -1) { ok = false; break; }
+                    pos = found + 1; afterGap = false;
+                } else {
+                    if (pos >= instrIndex.length || !matchPat(instrIndex[pos].normalized, step.n)) { ok = false; break; }
+                    pos++;
+                }
+            }
+            if (!ok) continue;
+
+            let startRaw = instrIndex[i].rawIndex;
+            if (map.has(startRaw)) continue;
+
+            let addr = addrOfLine(rawLines[startRaw]);
+            let { lines, endRaw, branches } = collectGadget(startRaw);
+            map.set(startRaw, { startLine: startRaw, endLine: endRaw, address: addr, lines, length: lines.length, branches });
+        }
+    }
+    return [...map.values()];
+}
+
+// ═══════════════════════════════════════════════════════
+//  SORTING
+// ═══════════════════════════════════════════════════════
+function sortedGadgets(gadgets, by) {
+    if (by === 'addr') return [...gadgets].sort((a,b) => parseInt(a.address||'0',16) - parseInt(b.address||'0',16));
+    if (by === 'len')  return [...gadgets].sort((a,b) => a.length - b.length);
+    return gadgets;
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDERING
+// ═══════════════════════════════════════════════════════
+function renderGadget(g) {
+    let html = '';
+    for (let li = 0; li < g.lines.length; li++) {
+        let raw = g.lines[li];
+        let bi  = g.branches.find(b => b.offset === li);
+
+        if (!bi) {
+            html += `<div class="g-line">${esc(raw)}</div>`;
+        } else {
+            let cls   = bi.soft ? 'g-soft' : 'g-hard-b';
+            let expId = 'xp' + (expandCounter++);
+            let tgt   = bi.target || '';
+            let isReg = /^(er|xr|qr|r)\d/i.test(tgt);
+            let srcLine = g.startLine + li;   // raw line index of this branch instruction
+            let lbl   = tgt ? `↗ ${esc(tgt)}` : '↗';
+            html +=
+                `<div class="${cls}">${esc(raw)}` +
+                `<button class="xbtn" data-expid="${expId}" data-target="${esc(tgt)}" data-isreg="${isReg}" data-srcline="${srcLine}" onclick="toggleExpand(this)">${lbl}</button></div>` +
+                `<div class="xpanel" id="${expId}"></div>`;
+        }
+    }
+
+    // g.address is already clean (e.g. "3DF26" or "230EA") from addrOfLine
+    // Just strip any stray colons or spaces that might remain
+    let cleanAddr = (g.address || '').replace(/[: ]/g, '').toUpperCase();
+    let ci = copyBuf.length;
+    copyBuf.push(cleanAddr);
+
+    return `<div class="gadget-block">` +
+        `<div class="gadget-header">` +
+        `<span>${esc(g.address||'?')} · lines ${g.startLine+1}–${g.endLine+1} · len ${g.length}</span>` +
+        `<button class="copy-gadget-btn" onclick="doCopy(this,${ci})">addr</button>` +
+        `</div>${html}</div>`;
+}
+
+function renderPage(gadgets, by, page) {
+    by   = by   ?? currentSort;
+    page = page ?? currentPage;
+
+    copyBuf = [];
+    expandCounter = 0;
+
+    let sorted  = sortedGadgets(gadgets, by);
+    let total   = sorted.length;
+    let nPages  = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    page = Math.max(0, Math.min(page, nPages - 1));
+    currentPage = page;
+    currentSort = by;
+
+    if (!total) {
+        resultsDiv.innerHTML = `<pre style="margin:0;color:#4a6080;">// No gadgets found.</pre>`;
+        pgWrap.style.display = 'none';
+        return;
+    }
+
+    let slice = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    resultsDiv.innerHTML = slice.map(g => renderGadget(g)).join('');
+    resultsDiv.scrollTop = 0;
+
+    if (nPages > 1) {
+        pgWrap.style.display = 'flex';
+        pgInfo.textContent   = `Page ${page+1} / ${nPages}  (${total} total)`;
+        prevBtn.disabled = page === 0;
+        nextBtn.disabled = page === nPages - 1;
+    } else {
+        pgWrap.style.display = 'none';
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+//  EXPAND HANDLER
+// ═══════════════════════════════════════════════════════
+window.toggleExpand = function(btn) {
+    let expId  = btn.getAttribute('data-expid');
+    let target = btn.getAttribute('data-target');
+    let isReg  = btn.getAttribute('data-isreg') === 'true';
+    let panel  = document.getElementById(expId);
+    if (!panel) return;
+
+    // Toggle if already loaded
+    if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        btn.classList.remove('open');
+        return;
+    }
+
+    // Lazy-load content
+    if (!panel.dataset.loaded) {
+        panel.dataset.loaded = '1';
+        let srcLine = parseInt(btn.getAttribute('data-srcline') || '-1');
+        if (!target) {
+            panel.innerHTML = `<div class="xnote">No branch target found in instruction text</div>`;
+        } else if (isReg) {
+            panel.innerHTML = `<div class="xnote">Register target ${esc(target)} — cannot resolve statically</div>`;
+        } else {
+            let destLines = getDestLines(target, srcLine);
+            if (!destLines) {
+                panel.innerHTML = `<div class="xnote">Label/address ${esc(target)} not found in disassembly</div>`;
+            } else {
+                panel.innerHTML = destLines.map(l => `<div class="xl">${esc(l)}</div>`).join('');
+            }
+        }
+    }
+
+    panel.style.display = 'block';
+    btn.classList.add('open');
+};
+
+// ═══════════════════════════════════════════════════════
+//  COPY GADGET
+// ═══════════════════════════════════════════════════════
+window.doCopy = function(btn, idx) {
+    let addr = copyBuf[idx] || '';
+    navigator.clipboard.writeText(addr).then(() => {
+        btn.textContent = 'copied';
+        setAction(`Copied: ${addr}`);
+        setTimeout(() => btn.textContent = 'addr', 1500);
+    }).catch(() => setAction('Copy failed', true));
+};
+
+// ═══════════════════════════════════════════════════════
+//  SEARCH
+// ═══════════════════════════════════════════════════════
+async function performSearch() {
+    if (!rawLines.length)        { setAction('Upload a disassembly file first', true); return; }
+    let raw = instrTA.value.trim();
+    if (!raw)                    { setAction('Enter instructions', true); return; }
+
+    let steps = parseSteps(raw);
+    if (!steps.some(s => s.type === 'instr' || s.type === 'oset'))
+        { setAction('No valid instructions entered', true); return; }
+
+    let seqs = expandSteps(steps);
+
+    setAction('Searching...');
+    await new Promise(r => setTimeout(r, 10));
+
+    try {
+        let gadgets  = findAll(seqs);
+        lastGadgets  = gadgets;
+        currentPage  = 0;
+        currentSort  = 'len';
+        renderPage(gadgets, 'len', 0);
+        setCount(gadgets.length);
+        setAction(gadgets.length ? `Found ${gadgets.length} gadget(s)` : 'No gadgets found');
+    } catch(e) {
+        setAction('Search error: ' + e.message, true);
+        console.error(e);
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+//  FILE LOADING
+// ═══════════════════════════════════════════════════════
+function loadFile(file) {
+    setDisasState('loading');
+    setAction('Reading file...');
+    let reader = new FileReader();
+    reader.onload = e => {
+        setTimeout(() => {
+            fileContent  = e.target.result;
+            rawLines     = fileContent.split(/\r?\n/);
+            instrIndex   = buildIndex(rawLines);
+            let size     = new Blob([fileContent]).size;
+            setDisasState('loaded', { name: file.name, lines: rawLines.length, instrs: instrIndex.length, size });
+            setAction('File loaded');
+            resultsDiv.innerHTML = `<pre style="margin:0;color:#4a6080;">// File loaded. Enter instructions and click Find.</pre>`;
+            setCount();
+            pgWrap.style.display = 'none';
+            uploadBtn.style.animation = 'none';
+        }, 300);
+    };
+    reader.onerror = () => { setDisasState('no-file'); setAction('Error reading file', true); };
+    reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════
+//  CLEAR
+// ═══════════════════════════════════════════════════════
+function clearAll() {
+    rawLines = []; instrIndex = []; fileContent = '';
+    instrTA.value = ''; lastGadgets = [];
+    currentSort = 'len'; currentPage = 0;
+    resultsDiv.innerHTML = `<pre style="margin:0;color:#4a6080;">// Upload a disassembly file and enter instructions to search.</pre>`;
+    setDisasState('no-file');
+    setAction('Cleared');
+    setCount();
+    pgWrap.style.display = 'none';
+    uploadBtn.style.animation = 'pulse 1.5s infinite';
+}
+
+// ═══════════════════════════════════════════════════════
+//  EVENTS
+// ═══════════════════════════════════════════════════════
+uploadBtn.onclick = () => {
+    let inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.txt,.asm,.dis,.lst,text/plain';
+    inp.onchange = e => { if (e.target.files.length) loadFile(e.target.files[0]); };
+    inp.click();
+};
+
+searchBtn.onclick  = performSearch;
+
+sortAddrBtn.onclick = () => {
+    if (!lastGadgets.length) { setAction('Search first', true); return; }
+    renderPage(lastGadgets, 'addr', 0);
+    setAction('Sorted by address');
+};
+sortLenBtn.onclick = () => {
+    if (!lastGadgets.length) { setAction('Search first', true); return; }
+    renderPage(lastGadgets, 'len', 0);
+    setAction('Sorted by length');
+};
+
+prevBtn.onclick = () => {
+    if (currentPage > 0) {
+        renderPage(lastGadgets, currentSort, currentPage - 1);
+        setAction(`Page ${currentPage + 1}`);
+    }
+};
+nextBtn.onclick = () => {
+    let np = Math.ceil(sortedGadgets(lastGadgets, currentSort).length / PAGE_SIZE) - 1;
+    if (currentPage < np) {
+        renderPage(lastGadgets, currentSort, currentPage + 1);
+        setAction(`Page ${currentPage + 1}`);
+    }
+};
+
+instrTA.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) performSearch();
+});
+
+// Drag-and-drop
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+    e.preventDefault();
+    let f = e.dataTransfer?.files?.[0];
+    if (f) loadFile(f);
+});
+
+// Init
+setDisasState('no-file');
+setAction('Ready');
+</script>
+</body>
+</html>
