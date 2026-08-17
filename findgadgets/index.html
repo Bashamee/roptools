@@ -594,7 +594,9 @@ function patternToRegex(np) {
     let e = np.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     // 'rn' → digit wildcard (covers rn, ern, xrn, qrn)
     let r = e.replace(/r(n)/g, 'r(\\d{1,2})');
-    return new RegExp('^' + r + '$');
+    // No $ at end → prefix match, consistent with non-wildcard startsWith behaviour
+    // e.g. "add rn" matches "add r0, #5" just like "add r0" would via startsWith
+    return new RegExp('^' + r);
 }
 
 function hasWildcard(np) { return /rn/.test(np); }
@@ -686,12 +688,11 @@ function branchType(n) {
             rest.startsWith('er') || rest.startsWith('xr')) return 'hard_b';
     }
 
-    // B <hex_address> or B ER<n> → hard stop, show expand
-    // Only when everything after 'b' is pure hex digits, or starts with 'er'/'xr'
-    let afterB = n.slice(1);
-    if (/^[0-9a-f]+$/.test(afterB) || afterB.startsWith('er') || afterB.startsWith('xr')) {
-        return 'hard_b';
-    }
+    // B <address or label> → hard stop
+    // Catches: "b12345" (hex), "ber0" (register), "bf_03030" (label), "bstrcpy" (named), …
+    // At this point we've already ruled out all soft mnemonics and BAL,
+    // so any remaining "b…" with content after it must be unconditional B.
+    if (n.length > 1) return 'hard_b';
 
     return 'none';
 }
@@ -711,13 +712,16 @@ function branchTarget(instrText) {
 }
 
 function addrOfLine(line) {
-    // segment:offset format: ; 3:DF26 | → "3DF26"
+    // Format 1b: ; 3:DF26 | (segment:offset in comment)
     let ms = line.match(/;\s*([0-9A-Fa-f]{1,2}):([0-9A-Fa-f]{4,5})\s*\|/);
     if (ms) return (ms[1] + ms[2]).toUpperCase();
-    // plain hex: ; 230EA |
+    // Format 1a: ; 60000 | (plain hex in comment)
     let m = line.match(/;\s*([0-9A-Fa-f]+)\s*\|/);
     if (m) return m[1].toUpperCase();
-    // line starts with address
+    // Format 2b: 6:0000H at start of line (segment:offsetH)
+    let m3 = line.match(/^([0-9A-Fa-f]+):([0-9A-Fa-f]+)H?\b/i);
+    if (m3) return (m3[1] + m3[2]).toUpperCase();
+    // Format 2a: 60000 or 60000H at start of line
     let m2 = line.match(/^([0-9A-Fa-f]+H?)\b/i);
     if (m2) return m2[1].replace(/H$/i, '').toUpperCase();
     return '';
@@ -813,11 +817,18 @@ function findLineByAddr(addrStr, srcLine) {
             if (a === rawHex || (hexSuffix && a === hexSuffix)) return i;
         }
 
-        // line starts with address (format 2)
+        // line starts with address (format 2a: plain hex or hexH)
         let m2 = ln.match(/^([0-9A-Fa-f]+H?)\b/i);
         if (m2) {
             let a = m2[1].replace(/H$/i,'').toLowerCase();
             if (a === rawHex || (hexSuffix && a === hexSuffix)) return i;
+        }
+
+        // line starts with segment:offsetH (format 2b: 6:0000H)
+        let ms2 = ln.match(/^([0-9A-Fa-f]+):([0-9A-Fa-f]+)H?\b/i);
+        if (ms2) {
+            let combined = (ms2[1] + ms2[2]).toLowerCase();
+            if (combined === rawHex || (hexSuffix && combined === hexSuffix)) return i;
         }
 
         // label definition: "f_230EA:" or "strcpy:" at start of line
