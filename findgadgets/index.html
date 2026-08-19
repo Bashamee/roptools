@@ -243,13 +243,44 @@
             gap: 10px;
         }
 
+        /* two-column layout for search + exclusion */
+        .search-cols {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-width: 0;
+        }
+
         .search-group {
             display: flex;
             flex-direction: column;
             gap: 5px;
             flex: 1;
-            min-width: 200px;
+            min-width: 180px;
         }
+
+        .s-label {
+            font-size: 0.6rem;
+            color: var(--text-faint);
+            letter-spacing: 0.04em;
+        }
+        .s-label code {
+            color: rgba(91,156,246,0.7);
+            background: rgba(91,156,246,0.07);
+            padding: 0 3px;
+            border-radius: 3px;
+        }
+
+        /* exclusion textarea — red-tinted */
+        .excl-group textarea {
+            border-color: rgba(240,100,80,0.22);
+        }
+        .excl-group textarea:focus {
+            border-color: rgba(240,100,80,0.45);
+            box-shadow: 0 0 0 3px rgba(240,100,80,0.07);
+        }
+        .excl-lbl { color: rgba(240,130,100,0.55); }
 
         .search-group label {
             font-size: 0.62rem;
@@ -492,8 +523,15 @@
     </div>
 
     <div class="search-section">
-        <div class="search-group">
-            <textarea id="instructionsInput" rows="3" placeholder="pop ern&#10;rt"></textarea>
+        <div class="search-cols">
+            <div class="search-group">
+                <label class="s-label">SEARCH &nbsp;·&nbsp; <code>n</code>=wildcard · <code>/</code>=gap · <code>a/b</code>=either order · <code>(\n…\n) N</code>=any order max N lines</label>
+                <textarea id="instructionsInput" rows="3" placeholder="pop ern&#10;rt"></textarea>
+            </div>
+            <div class="search-group excl-group">
+                <label class="s-label excl-lbl">EXCLUDE &nbsp;·&nbsp; hide gadgets containing these</label>
+                <textarea id="exclusionInput" rows="3" placeholder="pop er0"></textarea>
+            </div>
         </div>
         <button id="searchBtn" class="search-btn">Find</button>
     </div>
@@ -540,6 +578,7 @@ const searchBtn   = document.getElementById('searchBtn');
 const sortAddrBtn = document.getElementById('sortAddrBtn');
 const sortLenBtn  = document.getElementById('sortLenBtn');
 const instrTA     = document.getElementById('instructionsInput');
+const exclTA      = document.getElementById('exclusionInput');
 const pgWrap      = document.getElementById('pgWrap');
 const prevBtn     = document.getElementById('prevBtn');
 const nextBtn     = document.getElementById('nextBtn');
@@ -648,56 +687,50 @@ function buildIndex(rl) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  BRANCH CLASSIFICATION
-//  hard_end : pop pc / rt / rti / brk         → gadget terminates, no expand
-//  hard_b   : B <addr> / BAL <addr>           → gadget terminates, show expand
+//  BRANCH CLASSIFICATION  (operates on ORIGINAL instruction text)
+//  hard_end : POP PC / RT / RTI / BRK         → gadget terminates, no expand
+//  hard_b   : B … / BAL …                     → gadget terminates, show expand
 //  soft     : BL / BEQ / BNE / BGT / BLT …   → show expand, continue scanning
 //  none     : anything else
 // ═══════════════════════════════════════════════════════
 
-// All soft (non-terminating) branch mnemonics, longest first to avoid prefix clashes
-const SOFT_B = [
-    'bgts','bges','blts','bles',               // 4-char conditional
-    'beq','bne','blt','bgt','ble','bge',       // 3-char conditional
-    'bnv','bov','bps','bns','bnc','bcy',
-    'bnz','bz','bzf',
-    'bc',                                       // BC cond,addr  (generic form)
-    'bl',                                       // branch and link (function call)
-].sort((a,b) => b.length - a.length);
+const SOFT_B_MN = new Set([
+    'bl',                                           // branch and link (function call)
+    'beq','bz','bzf','bne','bnz',                   // equal / not-equal
+    'blt','bcy','bgt','ble','bge','bnc',            // unsigned compare
+    'blts','bgts','bles','bges',                    // signed compare
+    'bnv','bov','bps','bns',                        // overflow / sign
+    'bc',                                           // generic BC cond,addr
+]);
 
-function branchType(n) {
-    if (n === 'poppc' || n === 'rt' || n === 'rti') return 'hard_end';
-    if (n.startsWith('brk'))                         return 'hard_end';
-    if (!n.startsWith('b'))                          return 'none';
+/**
+ * Classify an instruction by extracting its mnemonic (first token).
+ * Accepts ORIGINAL (un-normalized) instruction text.
+ */
+function branchType(instrText) {
+    if (!instrText) return 'none';
+    let parts = instrText.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+    let mn = parts[0];
+    if (!mn) return 'none';
 
-    // Check all known soft branch mnemonics (longest first)
-    for (let mn of SOFT_B) {
-        if (!n.startsWith(mn)) continue;
-        let rest = n.slice(mn.length);
-        // After the mnemonic: address (hex/label/local), register, comma (BC form), or end
-        if (!rest || /^[0-9a-f,._]/.test(rest) || /^[a-z]/.test(rest) ||
-            rest.startsWith('er') || rest.startsWith('xr')) {
-            return 'soft';
-        }
-    }
+    // Hard terminators
+    if (mn === 'rt' || mn === 'rti' || mn === 'brk') return 'hard_end';
+    // POP PC (in any form: "pop pc", "pop er0, pc", etc.)
+    if (mn === 'pop' && parts.includes('pc')) return 'hard_end';
 
-    // BAL (branch always) → hard stop, show expand
-    if (n.startsWith('bal')) {
-        let rest = n.slice(3);
-        if (!rest || /^[0-9a-f._]/.test(rest) || /^[a-z]/.test(rest) ||
-            rest.startsWith('er') || rest.startsWith('xr')) return 'hard_b';
-    }
+    // Hard unconditional branches — B and BAL only
+    if (mn === 'b' || mn === 'bal') return 'hard_b';
 
-    // B <address or label> → hard stop
-    // Catches: "b12345" (hex), "ber0" (register), "bf_03030" (label), "bstrcpy" (named), …
-    // At this point we've already ruled out all soft mnemonics and BAL,
-    // so any remaining "b…" with content after it must be unconditional B.
-    if (n.length > 1) return 'hard_b';
+    // Soft branches — all conditional + BL
+    if (SOFT_B_MN.has(mn)) return 'soft';
 
     return 'none';
 }
 
-function isHard(n) { let t = branchType(n); return t === 'hard_end' || t === 'hard_b'; }
+function isHard(instrText) {
+    let t = branchType(instrText);
+    return t === 'hard_end' || t === 'hard_b';
+}
 
 // ═══════════════════════════════════════════════════════
 //  BRANCH TARGET EXTRACTION & LOOKUP
@@ -846,7 +879,7 @@ function getDestLines(targetStr, srcLine) {
     for (let k = li; k < rawLines.length && lines.length < 60; k++) {
         lines.push(rawLines[k]);
         let ins = extractInstr(rawLines[k]);
-        if (ins && isHard(norm(ins))) break;
+        if (ins && isHard(ins)) break;          // ← original text
     }
     return lines;
 }
@@ -914,8 +947,7 @@ function collectGadget(startRaw) {
         lines.push(line);
         let ins = extractInstr(line);
         if (!ins) continue;
-        let ni = norm(ins);
-        let bt = branchType(ni);
+        let bt = branchType(ins);          // ← original text, not norm()
         if (bt === 'hard_end') { endRaw = k; break; }
         if (bt === 'hard_b') {
             branches.push({ offset: lines.length - 1, soft: false, instrText: ins, target: branchTarget(ins) });
@@ -952,7 +984,7 @@ function findAll(seqs) {
                 if (afterGap) {
                     let found = -1;
                     for (let k = pos; k < instrIndex.length; k++) {
-                        if (isHard(instrIndex[k].normalized)) break;
+                        if (isHard(instrIndex[k].instr)) break;   // ← original text
                         if (matchPat(instrIndex[k].normalized, step.n)) { found = k; break; }
                     }
                     if (found === -1) { ok = false; break; }
@@ -976,8 +1008,91 @@ function findAll(seqs) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  SORTING
+//  UNORDERED SEARCH  ( ... ) N
+//  Finds gadgets containing ALL listed instructions
+//  in ANY order, within at most N lines total.
 // ═══════════════════════════════════════════════════════
+function findUnordered(instrNorms, maxLen) {
+    let results = new Map();
+
+    // Try each instruction as a potential gadget-entry anchor
+    for (let anchorNorm of instrNorms) {
+        let others = instrNorms.filter(x => x !== anchorNorm);
+
+        for (let i = 0; i < instrIndex.length; i++) {
+            if (!matchPat(instrIndex[i].normalized, anchorNorm)) continue;
+
+            let startRaw = instrIndex[i].rawIndex;
+            if (results.has(startRaw)) continue;
+
+            let addr = addrOfLine(rawLines[startRaw]);
+            let { lines, endRaw, branches } = collectGadget(startRaw);
+
+            if (lines.length > maxLen) continue;
+
+            // Build normalized instruction list for this gadget
+            let gadgetNorms = lines.map(l => {
+                let ins = extractInstr(l);
+                return ins ? norm(ins) : null;
+            }).filter(Boolean);
+
+            // Every "other" pattern must appear somewhere inside the gadget
+            let allFound = others.every(pat =>
+                gadgetNorms.some(gn => matchPat(gn, pat))
+            );
+            if (!allFound) continue;
+
+            results.set(startRaw, {
+                startLine: startRaw, endLine: endRaw,
+                address: addr, lines, length: lines.length, branches
+            });
+        }
+    }
+    return [...results.values()];
+}
+
+// ═══════════════════════════════════════════════════════
+//  EXCLUSION FILTER
+// ═══════════════════════════════════════════════════════
+function parseExclusions(text) {
+    return text.split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(l => l && !l.startsWith(';'))
+        .map(l => norm(l));
+}
+
+function gadgetMatchesExclusion(gadget, exclNorms) {
+    if (!exclNorms.length) return false;
+    for (let line of gadget.lines) {
+        let ins = extractInstr(line);
+        if (!ins) continue;
+        let ni = norm(ins);
+        if (exclNorms.some(ep => matchPat(ni, ep))) return true;
+    }
+    return false;
+}
+
+// ═══════════════════════════════════════════════════════
+//  UNIFIED INPUT PARSER
+//  Detects ( … ) N mode vs. regular mode.
+// ═══════════════════════════════════════════════════════
+function parseSearchInput(text) {
+    let lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+    let openIdx  = lines.indexOf('(');
+    let closeIdx = lines.findIndex(l => /^\)\s*\d+\s*$/.test(l));
+
+    if (openIdx !== -1 && closeIdx > openIdx) {
+        let maxLen      = parseInt(lines[closeIdx].replace(/^\)/, '').trim());
+        let innerNorms  = lines.slice(openIdx + 1, closeIdx)
+                              .map(l => norm(l)).filter(Boolean);
+        return { mode: 'unordered', instrs: innerNorms, maxLen };
+    }
+
+    return { mode: 'regular', steps: parseSteps(text) };
+}
+
+
 function sortedGadgets(gadgets, by) {
     if (by === 'addr') return [...gadgets].sort((a,b) => parseInt(a.address||'0',16) - parseInt(b.address||'0',16));
     if (by === 'len')  return [...gadgets].sort((a,b) => a.length - b.length);
@@ -1111,24 +1226,36 @@ window.doCopy = function(btn, idx) {
 //  SEARCH
 // ═══════════════════════════════════════════════════════
 async function performSearch() {
-    if (!rawLines.length)        { setAction('Upload a disassembly file first', true); return; }
+    if (!rawLines.length) { setAction('Upload a disassembly file first', true); return; }
     let raw = instrTA.value.trim();
-    if (!raw)                    { setAction('Enter instructions', true); return; }
+    if (!raw)             { setAction('Enter instructions', true); return; }
 
-    let steps = parseSteps(raw);
-    if (!steps.some(s => s.type === 'instr' || s.type === 'oset'))
-        { setAction('No valid instructions entered', true); return; }
-
-    let seqs = expandSteps(steps);
+    let parsed     = parseSearchInput(raw);
+    let exclText   = exclTA ? exclTA.value.trim() : '';
+    let exclusions = parseExclusions(exclText);
 
     setAction('Searching...');
     await new Promise(r => setTimeout(r, 10));
 
     try {
-        let gadgets  = findAll(seqs);
-        lastGadgets  = gadgets;
-        currentPage  = 0;
-        currentSort  = 'len';
+        let gadgets;
+        if (parsed.mode === 'unordered') {
+            if (!parsed.instrs.length) { setAction('No instructions inside ( )', true); return; }
+            if (!parsed.maxLen || parsed.maxLen < 1) { setAction('Invalid max-length in ( ) N', true); return; }
+            gadgets = findUnordered(parsed.instrs, parsed.maxLen);
+        } else {
+            if (!parsed.steps.some(s => s.type === 'instr' || s.type === 'oset'))
+                { setAction('No valid instructions entered', true); return; }
+            gadgets = findAll(expandSteps(parsed.steps));
+        }
+
+        // Apply exclusion filter
+        if (exclusions.length)
+            gadgets = gadgets.filter(g => !gadgetMatchesExclusion(g, exclusions));
+
+        lastGadgets = gadgets;
+        currentPage = 0;
+        currentSort = 'len';
         renderPage(gadgets, 'len', 0);
         setCount(gadgets.length);
         setAction(gadgets.length ? `Found ${gadgets.length} gadget(s)` : 'No gadgets found');
