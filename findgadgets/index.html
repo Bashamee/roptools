@@ -893,10 +893,11 @@ function parseSteps(text) {
         if (line === '/') {
             steps.push({ type: 'gap' });
         } else if (line.includes('/')) {
-            // same-line: ordered set
-            let parts = line.split('/').map(p => norm(p.trim())).filter(Boolean);
-            if (parts.length >= 2) steps.push({ type: 'oset', parts });
-            else if (parts.length === 1) steps.push({ type: 'instr', n: parts[0] });
+            // OR alternatives at ONE position: "pop er0/pop er8"
+            // → at this slot the instruction is EITHER pop er0 OR pop er8
+            let alts = line.split('/').map(p => norm(p.trim())).filter(Boolean);
+            if (alts.length >= 2) steps.push({ type: 'oset', alts });
+            else if (alts.length === 1) steps.push({ type: 'instr', n: alts[0] });
         } else {
             steps.push({ type: 'instr', n: norm(line) });
         }
@@ -904,37 +905,10 @@ function parseSteps(text) {
     return steps;
 }
 
-function permutations(arr) {
-    if (arr.length <= 1) return [[...arr]];
-    let res = [];
-    for (let i = 0; i < arr.length; i++) {
-        let rest = arr.filter((_, j) => j !== i);
-        for (let p of permutations(rest)) res.push([arr[i], ...p]);
-    }
-    return res;
-}
-
-/** Expand steps with oset into a list of concrete sequences */
+/** Pass steps through as a single sequence; oset is kept as OR-step */
 function expandSteps(steps) {
-    let seqs = [[]];
-    for (let s of steps) {
-        if (s.type === 'gap') {
-            seqs = seqs.map(sq => [...sq, { type: 'gap' }]);
-        } else if (s.type === 'instr') {
-            seqs = seqs.map(sq => [...sq, { type: 'instr', n: s.n }]);
-        } else { // oset
-            let perms = permutations(s.parts);
-            let next = [];
-            for (let sq of seqs)
-                for (let p of perms) {
-                    let ns = [...sq];
-                    for (let n of p) ns.push({ type: 'instr', n });
-                    next.push(ns);
-                }
-            seqs = next;
-        }
-    }
-    return seqs;
+    // No permutation expansion needed — oset is OR (one position, any alternative)
+    return [steps];
 }
 
 // ═══════════════════════════════════════════════════════
@@ -964,17 +938,26 @@ function collectGadget(startRaw) {
 // ═══════════════════════════════════════════════════════
 //  MAIN SEARCH
 // ═══════════════════════════════════════════════════════
+
+/** Match a single step (instr OR oset) against a normalized instruction string */
+function matchStep(normInstr, step) {
+    if (step.type === 'instr') return matchPat(normInstr, step.n);
+    if (step.type === 'oset')  return step.alts.some(alt => matchPat(normInstr, alt));
+    return false;
+}
+
 function findAll(seqs) {
     let map = new Map();
 
     for (let seq of seqs) {
         if (!seq.length) continue;
-        let fi = seq.findIndex(s => s.type === 'instr');
+        // First non-gap step is the anchor
+        let fi = seq.findIndex(s => s.type === 'instr' || s.type === 'oset');
         if (fi === -1) continue;
-        let fn = seq[fi].n;
+        let firstStep = seq[fi];
 
         for (let i = 0; i < instrIndex.length; i++) {
-            if (!matchPat(instrIndex[i].normalized, fn)) continue;
+            if (!matchStep(instrIndex[i].normalized, firstStep)) continue;
 
             // Match the rest of the sequence from i+1
             let pos = i + 1, afterGap = false, ok = true;
@@ -984,13 +967,13 @@ function findAll(seqs) {
                 if (afterGap) {
                     let found = -1;
                     for (let k = pos; k < instrIndex.length; k++) {
-                        if (isHard(instrIndex[k].instr)) break;   // ← original text
-                        if (matchPat(instrIndex[k].normalized, step.n)) { found = k; break; }
+                        if (isHard(instrIndex[k].instr)) break;
+                        if (matchStep(instrIndex[k].normalized, step)) { found = k; break; }
                     }
                     if (found === -1) { ok = false; break; }
                     pos = found + 1; afterGap = false;
                 } else {
-                    if (pos >= instrIndex.length || !matchPat(instrIndex[pos].normalized, step.n)) { ok = false; break; }
+                    if (pos >= instrIndex.length || !matchStep(instrIndex[pos].normalized, step)) { ok = false; break; }
                     pos++;
                 }
             }
