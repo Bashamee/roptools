@@ -628,6 +628,17 @@ function norm(instr) {
  * 'n' immediately after 'r' (register wildcard) → (\d{1,2})
  * e.g. "poper n" → norm → "popern" → "poper(\d{1,2})"
  */
+/**
+ * Strip signed displacement offsets that precede register-indirect brackets.
+ * e.g.  +EH[ER10]  →  [ER10]
+ *        -60C6H[ER2] →  [ER2]
+ * This lets "L R0, [ER10]" also match "L R0, +EH[ER10]" and vice-versa.
+ */
+function canonicalize(n) {
+    // Match: optional sign, hex digits, optional H suffix, then '['
+    return n.replace(/[+\-][0-9a-f]+h?\[/g, '[');
+}
+
 function patternToRegex(np) {
     // escape regex special chars first
     let e = np.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -642,8 +653,11 @@ function hasWildcard(np) { return /rn/.test(np); }
 
 function matchPat(normInstr, np) {
     if (!np) return true;
-    if (hasWildcard(np)) return patternToRegex(np).test(normInstr);
-    return normInstr.startsWith(np);
+    // Canonicalize both sides so displacement variants match plain [reg] forms
+    let ci = canonicalize(normInstr);
+    let cp = canonicalize(np);
+    if (hasWildcard(cp)) return patternToRegex(cp).test(ci);
+    return ci.startsWith(cp);
 }
 
 // ═══════════════════════════════════════════════════════
