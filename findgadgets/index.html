@@ -501,6 +501,162 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.09); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+        /* ── LIGHT THEME ───────────────────────────────────────── */
+        body.light {
+            --bg:         #f0f2f8;
+            --glass:      rgba(0,0,0,0.03);
+            --glass-hov:  rgba(0,0,0,0.06);
+            --border:     rgba(0,0,0,0.08);
+            --border-hov: rgba(0,0,0,0.14);
+            --text:       rgba(20,30,60,0.9);
+            --text-dim:   rgba(40,60,100,0.6);
+            --text-faint: rgba(60,80,130,0.45);
+            --blue:       #2060cc;
+            --green:      #1a8c3a;
+            --teal:       #0e8a7a;
+            --gold:       #a06010;
+            background-image: radial-gradient(ellipse at 20% 20%, rgba(32,96,204,0.06) 0%, transparent 45%),
+                              radial-gradient(ellipse at 80% 80%, rgba(26,140,58,0.04) 0%, transparent 45%);
+        }
+        body.light .card {
+            background: rgba(248,250,255,0.94);
+            box-shadow: 0 20px 60px rgba(0,0,60,0.12), 0 0 0 0.5px rgba(0,0,0,0.06) inset;
+        }
+        body.light .results-container { background: rgba(0,0,0,0.025); }
+        body.light .g-line  { color: rgba(30,50,100,0.65); }
+        body.light .g-soft  { color: #905010; }
+        body.light .g-hard-b{ color: #aa2020; }
+        body.light .xpanel  { background: rgba(0,0,0,0.04); border-left-color: rgba(32,96,204,0.3); }
+        body.light .xl      { color: rgba(30,60,120,0.55); }
+
+        /* ── SETTINGS BUTTON ─────────────────────────────────────── */
+        .settings-btn {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            padding: 5px 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.18s, color 0.18s;
+        }
+        .settings-btn:hover { background: var(--glass-hov); color: var(--text); }
+
+        /* ── SETTINGS OVERLAY ────────────────────────────────────── */
+        .settings-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 900;
+        }
+        .settings-overlay.open { display: block; }
+
+        .settings-panel {
+            position: fixed;
+            top: 60px; right: 24px;
+            width: 300px;
+            background: rgba(10,14,26,0.97);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--border-hov);
+            border-radius: 14px;
+            padding: 16px;
+            z-index: 901;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+        }
+        body.light .settings-panel {
+            background: rgba(240,242,252,0.97);
+            box-shadow: 0 16px 48px rgba(0,0,60,0.15);
+        }
+
+        .sp-title {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-faint);
+            margin-bottom: 14px;
+        }
+
+        .sp-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .sp-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+        .sp-label {
+            font-size: 0.76rem;
+            color: var(--text-dim);
+            flex: 1;
+        }
+        .sp-label small { display: block; font-size: 0.66rem; color: var(--text-faint); margin-top: 2px; }
+
+        /* toggle switch */
+        .tog {
+            position: relative;
+            width: 36px; height: 20px;
+            flex-shrink: 0;
+        }
+        .tog input { opacity: 0; width: 0; height: 0; }
+        .tog-slider {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid var(--border-hov);
+        }
+        .tog-slider::before {
+            content: '';
+            position: absolute;
+            width: 14px; height: 14px;
+            left: 2px; top: 2px;
+            background: var(--text-faint);
+            border-radius: 50%;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .tog input:checked + .tog-slider { background: rgba(91,156,246,0.25); border-color: var(--blue); }
+        .tog input:checked + .tog-slider::before { transform: translateX(16px); background: var(--blue); }
+
+        /* max-length input */
+        .sp-num {
+            width: 52px;
+            background: var(--glass);
+            border: 1px solid var(--border-hov);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 3px 7px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            text-align: center;
+            outline: none;
+            flex-shrink: 0;
+        }
+        .sp-num:focus { border-color: var(--blue); }
+
+        /* theme pills */
+        .theme-pills { display: flex; gap: 5px; }
+        .theme-pill {
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--border-hov);
+            background: transparent;
+            color: var(--text-dim);
+            font-family: inherit;
+            font-size: 0.72rem;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .theme-pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+        body.light .theme-pill.active { background: var(--blue); color: #fff; }
     </style>
 </head>
 <body>
@@ -515,6 +671,52 @@
         <button id="sortAddrBtn" class="sort-btn">Sort by address</button>
         <button id="sortLenBtn"  class="sort-btn">Sort by length</button>
         <a href="../" style="text-decoration:none;"><button class="home-btn">Home</button></a>
+        <button id="settingsBtn" class="settings-btn">⚙ Settings</button>
+    </div>
+
+    <!-- Settings overlay (click outside to close) -->
+    <div class="settings-overlay" id="settingsOverlay"></div>
+
+    <!-- Settings panel -->
+    <div class="settings-panel" id="settingsPanel" style="display:none;">
+        <div class="sp-title">⚙ Settings</div>
+
+        <!-- Auto-expand -->
+        <div class="sp-row">
+            <div class="sp-label">
+                Auto-expand branches
+                <small>Show jump destinations without clicking ↗</small>
+            </div>
+            <label class="tog">
+                <input type="checkbox" id="togAutoExpand">
+                <span class="tog-slider"></span>
+            </label>
+        </div>
+
+        <!-- Auto-filter -->
+        <div class="sp-row">
+            <div class="sp-label">
+                Hide gadgets longer than
+                <small>Filter out long gadgets automatically</small>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                <input type="number" id="spMaxLen" class="sp-num" value="30" min="1" max="9999">
+                <span style="font-size:0.68rem;color:var(--text-faint)">lines</span>
+                <label class="tog">
+                    <input type="checkbox" id="togAutoFilter">
+                    <span class="tog-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Theme -->
+        <div class="sp-row">
+            <div class="sp-label">Theme</div>
+            <div class="theme-pills">
+                <button class="theme-pill active" id="pillDark">🌙 Dark</button>
+                <button class="theme-pill" id="pillLight">☀️ Light</button>
+            </div>
+        </div>
     </div>
 
     <div class="disas-bar">
@@ -555,15 +757,22 @@
 // ═══════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════
-let rawLines       = [];   // all raw lines of the disassembly file
-let instrIndex     = [];   // [{rawIndex, instr, normalized}]
+let rawLines       = [];
+let instrIndex     = [];
 let fileContent    = "";
-let lastGadgets    = [];   // all gadgets found in last search
-let copyBuf        = [];   // gadget texts for copy buttons (reset each render)
+let lastGadgets    = [];
+let copyBuf        = [];
 let currentSort    = 'len';
 let currentPage    = 0;
 let expandCounter  = 0;
 const PAGE_SIZE    = 30;
+
+const settings = {
+    autoExpand:    false,   // auto-show all branch destinations
+    autoFilter:    false,   // hide gadgets longer than autoFilterMax
+    autoFilterMax: 30,      // max gadget length when autoFilter is on
+    theme:         'dark',  // 'dark' | 'light'
+};
 
 // ═══════════════════════════════════════════════════════
 //  DOM REFS
@@ -577,6 +786,14 @@ const uploadBtn   = document.getElementById('uploadBtn');
 const searchBtn   = document.getElementById('searchBtn');
 const sortAddrBtn = document.getElementById('sortAddrBtn');
 const sortLenBtn  = document.getElementById('sortLenBtn');
+const settingsBtn     = document.getElementById('settingsBtn');
+const settingsPanel   = document.getElementById('settingsPanel');
+const settingsOverlay = document.getElementById('settingsOverlay');
+const togAutoExpand   = document.getElementById('togAutoExpand');
+const togAutoFilter   = document.getElementById('togAutoFilter');
+const spMaxLen        = document.getElementById('spMaxLen');
+const pillDark        = document.getElementById('pillDark');
+const pillLight       = document.getElementById('pillLight');
 const instrTA     = document.getElementById('instructionsInput');
 const exclTA      = document.getElementById('exclusionInput');
 const pgWrap      = document.getElementById('pgWrap');
@@ -1108,16 +1325,38 @@ function renderGadget(g) {
         if (!bi) {
             html += `<div class="g-line">${esc(raw)}</div>`;
         } else {
-            let cls   = bi.soft ? 'g-soft' : 'g-hard-b';
-            let expId = 'xp' + (expandCounter++);
-            let tgt   = bi.target || '';
-            let isReg = /^(er|xr|qr|r)\d/i.test(tgt);
-            let srcLine = g.startLine + li;   // raw line index of this branch instruction
-            let lbl   = tgt ? `↗ ${esc(tgt)}` : '↗';
+            let cls     = bi.soft ? 'g-soft' : 'g-hard-b';
+            let expId   = 'xp' + (expandCounter++);
+            let tgt     = bi.target || '';
+            let isReg   = /^(er|xr|qr|r)\d/i.test(tgt);
+            let srcLine = g.startLine + li;
+            let lbl     = tgt ? `↗ ${esc(tgt)}` : '↗';
+
+            // Auto-expand: populate content eagerly and show immediately
+            let panelContent = '';
+            let panelVisible = settings.autoExpand;
+            let panelLoaded  = settings.autoExpand;
+            if (settings.autoExpand) {
+                if (!tgt) {
+                    panelContent = `<div class="xnote">No branch target found in instruction text</div>`;
+                } else if (isReg) {
+                    panelContent = `<div class="xnote">Register target <strong>${esc(tgt)}</strong> — cannot resolve statically</div>`;
+                } else {
+                    let dl = getDestLines(tgt, srcLine);
+                    panelContent = dl
+                        ? dl.map(l => `<div class="xl">${esc(l)}</div>`).join('')
+                        : `<div class="xnote">Label/address <strong>${esc(tgt)}</strong> not found</div>`;
+                }
+            }
+
+            let btnCls      = panelVisible ? 'xbtn open' : 'xbtn';
+            let panelStyle  = panelVisible ? '' : 'display:none;';
+            let loadedAttr  = panelLoaded  ? 'data-loaded="1"' : '';
+
             html +=
                 `<div class="${cls}">${esc(raw)}` +
-                `<button class="xbtn" data-expid="${expId}" data-target="${esc(tgt)}" data-isreg="${isReg}" data-srcline="${srcLine}" onclick="toggleExpand(this)">${lbl}</button></div>` +
-                `<div class="xpanel" id="${expId}"></div>`;
+                `<button class="${btnCls}" data-expid="${expId}" data-target="${esc(tgt)}" data-isreg="${isReg}" data-srcline="${srcLine}" onclick="toggleExpand(this)">${lbl}</button></div>` +
+                `<div class="xpanel" id="${expId}" style="${panelStyle}" ${loadedAttr}>${panelContent}</div>`;
         }
     }
 
@@ -1141,7 +1380,12 @@ function renderPage(gadgets, by, page) {
     copyBuf = [];
     expandCounter = 0;
 
-    let sorted  = sortedGadgets(gadgets, by);
+    // Apply auto-filter if enabled
+    let visible = (settings.autoFilter && settings.autoFilterMax > 0)
+        ? gadgets.filter(g => g.length <= settings.autoFilterMax)
+        : gadgets;
+
+    let sorted  = sortedGadgets(visible, by);
     let total   = sorted.length;
     let nPages  = Math.max(1, Math.ceil(total / PAGE_SIZE));
     page = Math.max(0, Math.min(page, nPages - 1));
@@ -1149,7 +1393,10 @@ function renderPage(gadgets, by, page) {
     currentSort = by;
 
     if (!total) {
-        resultsDiv.innerHTML = `<pre style="margin:0;color:#4a6080;">// No gadgets found.</pre>`;
+        let msg = settings.autoFilter && visible.length < gadgets.length
+            ? `// All ${gadgets.length} gadgets filtered out (max length: ${settings.autoFilterMax})`
+            : '// No gadgets found.';
+        resultsDiv.innerHTML = `<pre style="margin:0;color:#4a6080;">${msg}</pre>`;
         pgWrap.style.display = 'none';
         return;
     }
@@ -1158,13 +1405,17 @@ function renderPage(gadgets, by, page) {
     resultsDiv.innerHTML = slice.map(g => renderGadget(g)).join('');
     resultsDiv.scrollTop = 0;
 
+    let countNote = (settings.autoFilter && visible.length < gadgets.length)
+        ? `  [filtered: ${visible.length} / ${gadgets.length}]` : '';
+
     if (nPages > 1) {
         pgWrap.style.display = 'flex';
-        pgInfo.textContent   = `Page ${page+1} / ${nPages}  (${total} total)`;
+        pgInfo.textContent   = `Page ${page+1} / ${nPages}  (${total} total)${countNote}`;
         prevBtn.disabled = page === 0;
         nextBtn.disabled = page === nPages - 1;
     } else {
         pgWrap.style.display = 'none';
+        if (countNote) setAction(`✅ Found ${total} gadget(s)${countNote}`);
     }
 }
 
@@ -1342,6 +1593,53 @@ nextBtn.onclick = () => {
 instrTA.addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) performSearch();
 });
+
+// ═══════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════
+function applyTheme(theme) {
+    settings.theme = theme;
+    document.body.classList.toggle('light', theme === 'light');
+    pillDark.classList.toggle('active',  theme === 'dark');
+    pillLight.classList.toggle('active', theme === 'light');
+}
+
+function openSettings() {
+    settingsPanel.style.display = 'block';
+    settingsOverlay.classList.add('open');
+}
+function closeSettings() {
+    settingsPanel.style.display = 'none';
+    settingsOverlay.classList.remove('open');
+}
+
+settingsBtn.onclick    = () => settingsPanel.style.display === 'none' ? openSettings() : closeSettings();
+settingsOverlay.onclick = closeSettings;
+
+// Auto-expand toggle
+togAutoExpand.onchange = () => {
+    settings.autoExpand = togAutoExpand.checked;
+    if (lastGadgets.length) renderPage(lastGadgets, currentSort, currentPage);
+};
+
+// Auto-filter toggle
+togAutoFilter.onchange = () => {
+    settings.autoFilter = togAutoFilter.checked;
+    if (lastGadgets.length) renderPage(lastGadgets, currentSort, 0);
+};
+
+// Auto-filter max length input
+spMaxLen.oninput = () => {
+    let v = parseInt(spMaxLen.value);
+    if (v > 0) {
+        settings.autoFilterMax = v;
+        if (settings.autoFilter && lastGadgets.length) renderPage(lastGadgets, currentSort, 0);
+    }
+};
+
+// Theme pills
+pillDark.onclick  = () => applyTheme('dark');
+pillLight.onclick = () => applyTheme('light');
 
 // Drag-and-drop
 document.addEventListener('dragover', e => e.preventDefault());
