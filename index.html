@@ -138,7 +138,6 @@
             animation: fadeIn 1s ease-out;
         }
 
-        /* ============ GLITCH (giống 0xCREATIVE) ============ */
         .glitch {
             font-size: 5rem;
             font-weight: 900;
@@ -413,7 +412,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ============ RESPONSIVE ============ */
         @media (max-width: 960px) {
             .sb { display: none; }
             .main { margin-left: 0; }
@@ -438,12 +436,16 @@
     <!-- ================= SIDEBAR ================= -->
     <nav class="sb">
         <div class="sb-brand">
-            <div class="sb-brand-n">T0TAL: 1</div>
+            <div class="sb-brand-n">T0TAL: 2</div>
         </div>
         <div class="sb-sec">TOOLS</div>
         <a href="findgadgets/index.html" class="sb-a">
             <span>></span>
             <span>find_gadgets</span>
+        </a>
+        <a href="tool.html" class="sb-a">
+            <span>></span>
+            <span>hex_transpiler</span>
         </a>
         <div class="sb-foot">
             Casio CWII · CWX<br>
@@ -482,22 +484,6 @@
                 POP EA &nbsp;|&nbsp;
                 POP QR0 &nbsp;|&nbsp;
                 RT
-
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-
-                PUSH QR0 &nbsp;|&nbsp;
-                PUSH EA &nbsp;|&nbsp;
-                MOV ER4, #00H &nbsp;|&nbsp;
-                MOV ER6, #00H &nbsp;|&nbsp;
-                MOV R0, #00H &nbsp;|&nbsp;
-                MOV R1, #03H &nbsp;|&nbsp;
-                LEA CA54H &nbsp;|&nbsp;
-                .l_010: ST XR4, [EA+] &nbsp;|&nbsp;
-                ADD ER0, #-1H &nbsp;|&nbsp;
-                BNE .l_010 &nbsp;|&nbsp;
-                POP EA &nbsp;|&nbsp;
-                POP QR0 &nbsp;|&nbsp;
-                RT
             </span>
         </div>
 
@@ -514,7 +500,6 @@
             </div>
 
             <div class="dg">
-                <!-- §01 -->
                 <div class="dc full">
                     <div class="dtag">§ 01 — OVERVIEW</div>
                     <h3>STACK LÀ GÌ?</h3>
@@ -528,209 +513,6 @@
                         <code>BL</code>;
                         và tự động lưu trạng thái CPU khi phần cứng chấp nhận yêu cầu ngắt.
                     </p>
-                    <p>
-                        Toàn bộ cơ chế stack xoay quanh thanh ghi 16-bit
-                        <code>SP</code> (Stack Pointer).
-                        Sau khi reset, giá trị khởi tạo của
-                        <code>SP</code> được đọc từ địa chỉ
-                        <code>0x0000–0x0001</code> trong ROM.
-                        Mọi hoạt động trên stack đều có kích thước word (2 byte) —
-                        SP luôn di chuyển theo số byte chẵn và luôn trỏ đến đỉnh ngăn xếp.
-                    </p>
-                </div>
-
-                <!-- §02 -->
-                <div class="dc">
-                    <div class="dtag">§ 02 — CON TRỎ NGĂN XẾP</div>
-                    <h3>Thanh ghi SP</h3>
-                    <p>
-                        SP là thanh ghi 16-bit, bit 0 được nối cứng thành
-                        <code>0</code> — SP luôn căn chỉnh theo word.
-                        Nếu toán hạng <code>PUSH</code> biểu diễn số byte lẻ,
-                        phần cứng tự thêm một byte giả để duy trì căn chỉnh.
-                    </p>
-                    <div class="cb">
-                        <span style="color:#777">; §1.2.2.7 — Stack Pointer (SP)</span><br>
-                        <span style="color:#777">; PUSH: SP = SP − 2, ghi vào [SP]</span><br>
-                        <span style="color:#777">; POP:  đọc từ [SP], SP = SP + 2</span><br><br>
-                        <span style="color:#fff">PUSH</span>
-                        <span style="color:var(--ac)">ER0</span>
-                        <span style="color:#777"> ; SP−=2, lưu R0 & R1</span><br>
-                        <span style="color:#fff">POP</span>
-                        <span style="color:var(--ac)">ER0</span>
-                        <span style="color:#777"> ; đọc R0 & R1; SP+=2</span>
-                    </div>
-                </div>
-
-                <!-- §03 -->
-                <div class="dc">
-                    <div class="dtag">§ 03 — PUSH / POP SIZES</div>
-                    <h3>Kích thước toán hạng</h3>
-                    <p>
-                        Mỗi dạng toán hạng tác động đến SP với lượng khác nhau.
-                        <code>PUSH R0</code> đẩy 1 byte nhưng SP vẫn giảm 2 do byte giả.
-                        Các thanh ghi kép trở lên không có overhead này.
-                    </p>
-                    <table class="dt">
-                        <thead>
-                            <tr>
-                                <th>Lệnh</th>
-                                <th>Thanh ghi</th>
-                                <th>Δ SP</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>PUSH R0</td>
-                                <td>R0 + dummy</td>
-                                <td style="color:var(--cy)">−2</td>
-                            </tr>
-                            <tr>
-                                <td>PUSH ER0</td>
-                                <td>R0, R1</td>
-                                <td style="color:var(--cy)">−2</td>
-                            </tr>
-                            <tr>
-                                <td>PUSH XR0</td>
-                                <td>R0–R3</td>
-                                <td style="color:var(--cy)">−4</td>
-                            </tr>
-                            <tr>
-                                <td>PUSH QR0</td>
-                                <td>R0–R7</td>
-                                <td style="color:var(--cy)">−8</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- §04 -->
-                <div class="dc">
-                    <div class="dtag">§ 04 — BL / RT</div>
-                    <h3>Địa chỉ trả về</h3>
-                    <p>
-                        Lệnh <code>BL target</code> lưu địa chỉ lệnh tiếp theo vào
-                        <code>LR</code> rồi nhảy đến target.
-                        Lệnh <code>RT</code> cuối chương trình con tải lại
-                        <code>LR</code> vào <code>PC</code>.
-                        Nếu gọi lồng nhau, bắt buộc <code>PUSH LR</code>
-                        trước khi <code>BL</code> tiếp theo.
-                    </p>
-                    <div class="cb">
-                        <span style="color:#fff">BL</span>
-                        <span style="color:var(--or)">sub_func</span>
-                        <span style="color:#777"> ; LR ← addr tiếp theo</span><br><br>
-                        <span style="color:var(--or)">sub_func:</span><br>
-                        &nbsp;&nbsp;
-                        <span style="color:#fff">PUSH</span>
-                        <span style="color:var(--ac)">LR</span>
-                        <span style="color:#777"> ; đưa LR lên stack</span><br>
-                        &nbsp;&nbsp;
-                        <span style="color:#fff">BL</span>
-                        <span style="color:var(--or)">Sigma_func</span><br>
-                        &nbsp;&nbsp;
-                        <span style="color:#fff">POP</span>
-                        <span style="color:var(--ac)">PC</span><br>
-                        <span style="color:#777"> ; lấy giá trị trên stack đưa vào PC</span><br>
-                    </div>
-                </div>
-
-                <!-- §05 -->
-                <div class="dc">
-                    <div class="dtag">§ 05 — MEMORY MODEL</div>
-                    <h3>SMALL / LARGE Model</h3>
-                    <p>
-                        nX-U16 hỗ trợ hai mô hình bộ nhớ.
-                        Model <code>LARGE</code> (1MB ROM)
-                        yêu cầu lưu thêm <code>CSR</code> khi gọi chương trình con —
-                        vì địa chỉ đầy đủ là 20-bit <code>CSR:PC</code>.
-                        Quan trọng trong ROP khi cần nhảy sang segment khác.
-                    </p>
-                    <table class="dt">
-                        <thead>
-                            <tr>
-                                <th>Hành động</th>
-                                <th>SMALL</th>
-                                <th>LARGE</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>BL lưu</td>
-                                <td>PC→LR</td>
-                                <td>PC→LR, CSR→LCSR</td>
-                            </tr>
-                            <tr>
-                                <td>RT khôi phục</td>
-                                <td>LR→PC</td>
-                                <td>LR→PC, LCSR→CSR</td>
-                            </tr>
-                            <tr>
-                                <td>PUSH LR</td>
-                                <td>LR</td>
-                                <td>LR + LCSR</td>
-                            </tr>
-                            <tr>
-                                <td>POP PC</td>
-                                <td>stack→PC</td>
-                                <td>stack→PC+CSR</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- §06 -->
-                <div class="dc full">
-                    <div class="dtag">§ 06 — DATA TYPES</div>
-                    <h3>Kiểu dữ liệu — nX-U16</h3>
-                    <p>
-                        nX-U16 là kiến trúc little-endian.
-                        Dữ liệu word (16-bit) phải căn chỉnh theo ranh giới word.
-                        Phần cứng bỏ qua bit 0 khi truy cập word —
-                        địa chỉ lẻ tự về địa chỉ chẵn.
-                    </p>
-                    <table class="dt">
-                        <thead>
-                            <tr>
-                                <th>Kiểu dữ liệu</th>
-                                <th>Kích thước</th>
-                                <th>Phạm vi</th>
-                                <th>Cờ tràn</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Byte không dấu</td>
-                                <td>8-bit</td>
-                                <td>0 → 255</td>
-                                <td>C = 1, modulo 256</td>
-                            </tr>
-                            <tr>
-                                <td>Byte có dấu</td>
-                                <td>8-bit</td>
-                                <td>−128 → +127</td>
-                                <td>OV = 1</td>
-                            </tr>
-                            <tr>
-                                <td>Word không dấu</td>
-                                <td>16-bit</td>
-                                <td>0 → 65535</td>
-                                <td>C = 1, modulo 65536</td>
-                            </tr>
-                            <tr>
-                                <td>Word có dấu</td>
-                                <td>16-bit</td>
-                                <td>−32768 → +32767</td>
-                                <td>OV = 1</td>
-                            </tr>
-                            <tr>
-                                <td>Bit</td>
-                                <td>1-bit</td>
-                                <td>0 / 1</td>
-                                <td>—</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </section>

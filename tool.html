@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>192x64 Hex Transpiler</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #38bdf8;
+            --radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Top Nav Bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: -10px;
+        }
+
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface);
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .btn-home:hover {
+            background: var(--surface-hover);
+            border-color: var(--primary);
+        }
+
+        .cre-tag {
+            color: var(--text-muted);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.85rem;
+            background: var(--surface);
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-top: 6px;
+        }
+
+        /* Layout Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 24px;
+        }
+
+        /* Card System */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        label span.val {
+            color: var(--accent);
+            font-family: monospace;
+        }
+
+        input[type="file"] {
+            background: var(--bg);
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        input[type="file"]:hover {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        input[type="range"] {
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Toggle switches */
+        .toggle-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 4px;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .toggle-item span {
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .toggle-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Display Screen */
+        canvas#canvasPreview {
+            width: 100%;
+            max-width: 576px;
+            height: auto;
+            aspect-ratio: 192 / 64;
+            background-color: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            image-rendering: pixelated;
+            margin: 0 auto;
+            display: block;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Output Textarea Section */
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-copy {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn-copy:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-copy:active {
+            transform: scale(0.98);
+        }
+
+        #copyToast {
+            font-size: 0.8rem;
+            color: var(--accent);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            color: #e2e8f0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+            white-space: pre;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 860px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Top Navigation -->
+        <div class="top-bar">
+            <a href="index.html" class="btn-home">← Trang chủ</a>
+            <span class="cre-tag">cre: @Bashamee</span>
+        </div>
+
+        <header>
+            <h1>192×64 Hex Transpiler</h1>
+            <p>Chuyển đổi hình ảnh sang định dạng Pure Hex 2-Plane cho màn hình đơn sắc/xám</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Left Controls -->
+            <div class="card">
+                <div class="card-title">Tùy chỉnh & Thông số</div>
+
+                <div class="form-group">
+                    <label>Tải ảnh lên</label>
+                    <input type="file" id="imageInput" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <label for="colorMode">Màu sắc màn hình xem trước</label>
+                    <select id="colorMode">
+                        <option value="bw">Trắng đen chuẩn</option>
+                        <option value="greenish">Trắng đen - Ngả xanh lá nhẹ (Thực tế)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="fitMode">Chế độ căn chỉnh</label>
+                    <select id="fitMode">
+                        <option value="center">Căn giữa (Vùng thừa là màu sáng)</option>
+                        <option value="stretch">Kéo dãn toàn màn hình</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Độ sáng <span class="val" id="brightVal">0</span></label>
+                    <input type="range" id="brightness" min="-100" max="100" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Độ tương phản <span class="val" id="contrastVal">0</span></label>
+                    <input type="range" id="contrast" min="-100" max="100" value="0">
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-item">
+                        <span>Thuật toán Dithering (Mịn ảnh)</span>
+                        <input type="checkbox" id="dither" checked>
+                    </label>
+                    <label class="toggle-item">
+                        <span>Đảo ngược màu (Đen ↔ Trắng)</span>
+                        <input type="checkbox" id="invert">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Right Preview & Output -->
+            <div class="card">
+                <div class="card-title">Xem trước màn hình (192×64px)</div>
+                
+                <canvas id="canvasPreview" width="192" height="64"></canvas>
+
+                <div class="output-header">
+                    <span id="copyToast">Đã sao chép vào bộ nhớ tạm!</span>
+                    <button class="btn-copy" onclick="copyCode()">Sao chép Hex</button>
+                </div>
+
+                <textarea id="codeOutput" readonly placeholder="Chọn ảnh để tạo mã Hex..."></textarea>
+            </div>
+        </div>
+
+        <footer>192x64 2-Plane Grayscale Engine · cre: @Bashamee</footer>
+    </div>
+
+    <canvas id="canvasHidden" width="192" height="64" style="display:none;"></canvas>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const colorModeInput = document.getElementById('colorMode');
+        const fitModeInput = document.getElementById('fitMode');
+        const brightnessInput = document.getElementById('brightness');
+        const contrastInput = document.getElementById('contrast');
+        const ditherInput = document.getElementById('dither');
+        const invertInput = document.getElementById('invert');
+
+        const brightVal = document.getElementById('brightVal');
+        const contrastVal = document.getElementById('contrastVal');
+
+        const canvasHidden = document.getElementById('canvasHidden');
+        const ctxHidden = canvasHidden.getContext('2d');
+
+        const canvasPreview = document.getElementById('canvasPreview');
+        const ctxPreview = canvasPreview.getContext('2d');
+
+        const codeOutput = document.getElementById('codeOutput');
+        const copyToast = document.getElementById('copyToast');
+
+        const colorPalettes = {
+            bw: [
+                [0, 0, 0],         
+                [80, 80, 80],      
+                [200, 200, 200],   
+                [255, 255, 255]    
+            ],
+            greenish: [
+                [15, 28, 20],      
+                [75, 105, 80],     
+                [175, 215, 180],   
+                [232, 250, 235]    
+            ]
+        };
+
+        let loadedImage = null;
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    loadedImage = img;
+                    processImage();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        [colorModeInput, fitModeInput, brightnessInput, contrastInput, ditherInput, invertInput].forEach(el => {
+            el.addEventListener('input', () => {
+                brightVal.textContent = brightnessInput.value;
+                contrastVal.textContent = contrastInput.value;
+                if (loadedImage) processImage();
+            });
+        });
+
+        function processImage() {
+            if (!loadedImage) return;
+
+            ctxHidden.fillStyle = "#ffffff";
+            ctxHidden.fillRect(0, 0, 192, 64);
+
+            const mode = fitModeInput.value;
+
+            if (mode === 'stretch') {
+                ctxHidden.drawImage(loadedImage, 0, 0, 192, 64);
+            } else {
+                const scale = Math.min(192 / loadedImage.width, 64 / loadedImage.height);
+                const w = loadedImage.width * scale;
+                const h = loadedImage.height * scale;
+                const x = (192 - w) / 2;
+                const y = (64 - h) / 2;
+                ctxHidden.drawImage(loadedImage, x, y, w, h);
+            }
+
+            const imgData = ctxHidden.getImageData(0, 0, 192, 64);
+            const data = imgData.data;
+
+            const bright = parseInt(brightnessInput.value);
+            const contrast = parseInt(contrastInput.value);
+            const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+            const isDither = ditherInput.checked;
+
+            let grayBuffer = new Float32Array(192 * 64);
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i], g = data[i+1], b = data[i+2];
+                let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                gray = factor * (gray - 128) + 128 + bright;
+                grayBuffer[i / 4] = Math.max(0, Math.min(255, gray));
+            }
+
+            let levelBuffer = new Uint8Array(192 * 64);
+            const levels = [0, 80, 200, 255]; 
+
+            if (isDither) {
+                for (let y = 0; y < 64; y++) {
+                    for (let x = 0; x < 192; x++) {
+                        let idx = y * 192 + x;
+                        let oldVal = grayBuffer[idx];
+                        
+                        let closestLevel = 0;
+                        let minDiff = Math.abs(oldVal - levels[0]);
+                        for (let l = 1; l < 4; l++) {
+                            let diff = Math.abs(oldVal - levels[l]);
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                closestLevel = l;
+                            }
+                        }
+
+                        levelBuffer[idx] = closestLevel;
+                        let newVal = levels[closestLevel];
+                        let err = oldVal - newVal;
+
+                        if (x + 1 < 192) grayBuffer[idx + 1] += err * (7 / 16);
+                        if (y + 1 < 64) {
+                            if (x - 1 >= 0) grayBuffer[idx + 192 - 1] += err * (3 / 16);
+                            grayBuffer[idx + 192] += err * (5 / 16);
+                            if (x + 1 < 192) grayBuffer[idx + 192 + 1] += err * (1 / 16);
+                        }
+                    }
+                }
+            } else {
+                for (let i = 0; i < grayBuffer.length; i++) {
+                    let val = grayBuffer[i];
+                    if (val < 50) levelBuffer[i] = 0;
+                    else if (val < 130) levelBuffer[i] = 1;
+                    else if (val < 215) levelBuffer[i] = 2;
+                    else levelBuffer[i] = 3;
+                }
+            }
+
+            const selectedColorMode = colorModeInput.value;
+            const activePalette = colorPalettes[selectedColorMode] || colorPalettes.bw;
+
+            const previewImgData = ctxPreview.createImageData(192, 64);
+            for (let i = 0; i < levelBuffer.length; i++) {
+                let colorRGB = activePalette[levelBuffer[i]];
+                previewImgData.data[i * 4]     = colorRGB[0];
+                previewImgData.data[i * 4 + 1] = colorRGB[1];
+                previewImgData.data[i * 4 + 2] = colorRGB[2];
+                previewImgData.data[i * 4 + 3] = 255;
+            }
+
+            ctxPreview.putImageData(previewImgData, 0, 0);
+
+            generateHexCode(levelBuffer);
+        }
+
+        function generateHexCode(levelBuffer) {
+            let plane1 = new Uint8Array(1536);
+            let plane2 = new Uint8Array(1536);
+
+            const isInverted = !invertInput.checked;
+
+            for (let y = 0; y < 64; y++) {
+                for (let x = 0; x < 192; x++) {
+                    let pixelIdx = y * 192 + x;
+                    let level = levelBuffer[pixelIdx]; 
+
+                    let p1Bit = 0;
+                    let p2Bit = 0;
+
+                    switch (level) {
+                        case 0: p1Bit = 0; p2Bit = 0; break; 
+                        case 1: p1Bit = 1; p2Bit = 0; break; 
+                        case 2: p1Bit = 0; p2Bit = 1; break; 
+                        case 3: p1Bit = 1; p2Bit = 1; break; 
+                    }
+
+                    if (isInverted) {
+                        p1Bit = p1Bit ^ 1;
+                        p2Bit = p2Bit ^ 1;
+                    }
+
+                    let byteIdx = y * 24 + Math.floor(x / 8);
+                    let bitShift = 7 - (x % 8);
+
+                    if (p1Bit) plane1[byteIdx] |= (1 << bitShift);
+                    if (p2Bit) plane2[byteIdx] |= (1 << bitShift);
+                }
+            }
+
+            const formatByte = val => val.toString(16).padStart(2, '0').toUpperCase();
+
+            let lines = [];
+            for (let y = 0; y < 64; y++) {
+                let line = [];
+                for (let b = 0; b < 24; b++) {
+                    line.push(formatByte(plane1[y * 24 + b]));
+                }
+                lines.push(line.join(" "));
+            }
+
+            lines.push("");
+
+            for (let y = 0; y < 64; y++) {
+                let line = [];
+                for (let b = 0; b < 24; b++) {
+                    line.push(formatByte(plane2[y * 24 + b]));
+                }
+                lines.push(line.join(" "));
+            }
+
+            codeOutput.value = lines.join("\n");
+        }
+
+        function copyCode() {
+            codeOutput.select();
+            navigator.clipboard.writeText(codeOutput.value);
+            
+            copyToast.style.opacity = '1';
+            setTimeout(() => {
+                copyToast.style.opacity = '0';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
