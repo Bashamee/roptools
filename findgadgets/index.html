@@ -501,34 +501,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.09); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
-        /* ── LIGHT THEME ───────────────────────────────────────── */
-        body.light {
-            --bg:         #f0f2f8;
-            --glass:      rgba(0,0,0,0.03);
-            --glass-hov:  rgba(0,0,0,0.06);
-            --border:     rgba(0,0,0,0.08);
-            --border-hov: rgba(0,0,0,0.14);
-            --text:       rgba(20,30,60,0.9);
-            --text-dim:   rgba(40,60,100,0.6);
-            --text-faint: rgba(60,80,130,0.45);
-            --blue:       #2060cc;
-            --green:      #1a8c3a;
-            --teal:       #0e8a7a;
-            --gold:       #a06010;
-            background-image: radial-gradient(ellipse at 20% 20%, rgba(32,96,204,0.06) 0%, transparent 45%),
-                              radial-gradient(ellipse at 80% 80%, rgba(26,140,58,0.04) 0%, transparent 45%);
-        }
-        body.light .card {
-            background: rgba(248,250,255,0.94);
-            box-shadow: 0 20px 60px rgba(0,0,60,0.12), 0 0 0 0.5px rgba(0,0,0,0.06) inset;
-        }
-        body.light .results-container { background: rgba(0,0,0,0.025); }
-        body.light .g-line  { color: rgba(30,50,100,0.65); }
-        body.light .g-soft  { color: #905010; }
-        body.light .g-hard-b{ color: #aa2020; }
-        body.light .xpanel  { background: rgba(0,0,0,0.04); border-left-color: rgba(32,96,204,0.3); }
-        body.light .xl      { color: rgba(30,60,120,0.55); }
-
         /* ── SETTINGS BUTTON ─────────────────────────────────────── */
         .settings-btn {
             background: var(--glass);
@@ -642,21 +614,6 @@
         }
         .sp-num:focus { border-color: var(--blue); }
 
-        /* theme pills */
-        .theme-pills { display: flex; gap: 5px; }
-        .theme-pill {
-            padding: 3px 10px;
-            border-radius: 20px;
-            border: 1px solid var(--border-hov);
-            background: transparent;
-            color: var(--text-dim);
-            font-family: inherit;
-            font-size: 0.72rem;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .theme-pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
-        body.light .theme-pill.active { background: var(--blue); color: #fff; }
     </style>
 </head>
 <body>
@@ -672,51 +629,6 @@
         <button id="sortLenBtn"  class="sort-btn">Sort by length</button>
         <a href="../" style="text-decoration:none;"><button class="home-btn">Home</button></a>
         <button id="settingsBtn" class="settings-btn">⚙ Settings</button>
-    </div>
-
-    <!-- Settings overlay (click outside to close) -->
-    <div class="settings-overlay" id="settingsOverlay"></div>
-
-    <!-- Settings panel -->
-    <div class="settings-panel" id="settingsPanel" style="display:none;">
-        <div class="sp-title">⚙ Settings</div>
-
-        <!-- Auto-expand -->
-        <div class="sp-row">
-            <div class="sp-label">
-                Auto-expand branches
-                <small>Show jump destinations without clicking ↗</small>
-            </div>
-            <label class="tog">
-                <input type="checkbox" id="togAutoExpand">
-                <span class="tog-slider"></span>
-            </label>
-        </div>
-
-        <!-- Auto-filter -->
-        <div class="sp-row">
-            <div class="sp-label">
-                Hide gadgets longer than
-                <small>Filter out long gadgets automatically</small>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                <input type="number" id="spMaxLen" class="sp-num" value="30" min="1" max="9999">
-                <span style="font-size:0.68rem;color:var(--text-faint)">lines</span>
-                <label class="tog">
-                    <input type="checkbox" id="togAutoFilter">
-                    <span class="tog-slider"></span>
-                </label>
-            </div>
-        </div>
-
-        <!-- Theme -->
-        <div class="sp-row">
-            <div class="sp-label">Theme</div>
-            <div class="theme-pills">
-                <button class="theme-pill active" id="pillDark">🌙 Dark</button>
-                <button class="theme-pill" id="pillLight">☀️ Light</button>
-            </div>
-        </div>
     </div>
 
     <div class="disas-bar">
@@ -753,6 +665,51 @@
     </div>
 </div>
 
+<!-- Settings overlay — outside .card so overflow:hidden doesn't clip it -->
+<div class="settings-overlay" id="settingsOverlay"></div>
+
+<!-- Settings panel -->
+<div class="settings-panel" id="settingsPanel" style="display:none;">
+    <div class="sp-title">⚙ Settings</div>
+
+    <!-- Auto-expand -->
+    <div class="sp-row">
+        <div class="sp-label">
+            Auto-expand branches
+            <small>Show all jump destinations inline without clicking ↗</small>
+        </div>
+        <label class="tog">
+            <input type="checkbox" id="togAutoExpand">
+            <span class="tog-slider"></span>
+        </label>
+    </div>
+
+    <!-- Auto-filter -->
+    <div class="sp-row" style="border-bottom:none;">
+        <div class="sp-label">
+            Hide gadgets longer than
+            <small>Automatically filter out long gadgets from results</small>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <input type="number" id="spMaxLen" class="sp-num" value="30" min="1" max="9999">
+            <span style="font-size:0.66rem;color:var(--text-faint);">lines</span>
+            <label class="tog">
+                <input type="checkbox" id="togAutoFilter">
+                <span class="tog-slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Page size -->
+    <div class="sp-row" style="border-bottom:none;margin-top:2px;border-top:1px solid var(--border);padding-top:10px;">
+        <div class="sp-label">
+            Gadgets per page
+            <small>Number of results shown per page</small>
+        </div>
+        <input type="number" id="spPageSize" class="sp-num" value="30" min="5" max="500">
+    </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════
 //  STATE
@@ -765,7 +722,9 @@ let copyBuf        = [];
 let currentSort    = 'len';
 let currentPage    = 0;
 let expandCounter  = 0;
-const PAGE_SIZE    = 30;
+let PAGE_SIZE    = 30;
+const destCache   = new Map(); // cache getDestLines() results across one search
+const renderCache = new Map(); // persistent cache for expand panels, cleared only on file load
 
 const settings = {
     autoExpand:    false,   // auto-show all branch destinations
@@ -792,8 +751,7 @@ const settingsOverlay = document.getElementById('settingsOverlay');
 const togAutoExpand   = document.getElementById('togAutoExpand');
 const togAutoFilter   = document.getElementById('togAutoFilter');
 const spMaxLen        = document.getElementById('spMaxLen');
-const pillDark        = document.getElementById('pillDark');
-const pillLight       = document.getElementById('pillLight');
+const spPageSize      = document.getElementById('spPageSize');
 const instrTA     = document.getElementById('instructionsInput');
 const exclTA      = document.getElementById('exclusionInput');
 const pgWrap      = document.getElementById('pgWrap');
@@ -1120,18 +1078,43 @@ function getDestLines(targetStr, srcLine) {
 // ═══════════════════════════════════════════════════════
 function parseSteps(text) {
     let steps = [];
-    for (let line of text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)) {
+    let lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    let i = 0;
+    while (i < lines.length) {
+        let line = lines[i];
+
+        // MNEMONIC( ... ) N — branch-destination search block
+        // e.g.  BEQ(        ← line ending with '('
+        //         mov r0, #0
+        //       ) 10
+        let bdMatch = line.match(/^([a-zA-Z]+)\s*\(\s*$/);
+        if (bdMatch) {
+            let mnemonic = bdMatch[1].toLowerCase();
+            let innerInstrs = [];
+            let maxLen = 0;
+            i++;
+            while (i < lines.length) {
+                let inner = lines[i];
+                let closeMatch = inner.match(/^\)\s*(\d+)\s*$/);
+                if (closeMatch) { maxLen = parseInt(closeMatch[1]); i++; break; }
+                if (inner === ')') { i++; break; }
+                innerInstrs.push(norm(inner));
+                i++;
+            }
+            steps.push({ type: 'branch_dest', mnemonic, instrs: innerInstrs, maxLen });
+            continue;
+        }
+
         if (line === '/') {
             steps.push({ type: 'gap' });
         } else if (line.includes('/')) {
-            // OR alternatives at ONE position: "pop er0/pop er8"
-            // → at this slot the instruction is EITHER pop er0 OR pop er8
             let alts = line.split('/').map(p => norm(p.trim())).filter(Boolean);
             if (alts.length >= 2) steps.push({ type: 'oset', alts });
             else if (alts.length === 1) steps.push({ type: 'instr', n: alts[0] });
         } else {
             steps.push({ type: 'instr', n: norm(line) });
         }
+        i++;
     }
     return steps;
 }
@@ -1170,10 +1153,65 @@ function collectGadget(startRaw) {
 //  MAIN SEARCH
 // ═══════════════════════════════════════════════════════
 
-/** Match a single step (instr OR oset) against a normalized instruction string */
-function matchStep(normInstr, step) {
-    if (step.type === 'instr') return matchPat(normInstr, step.n);
-    if (step.type === 'oset')  return step.alts.some(alt => matchPat(normInstr, alt));
+/**
+ * Try to match a branch_dest step against the instruction at instrIndex[i].
+ * - Resolves the branch target and collects destination lines (cached)
+ * - step.maxLen = max lines in the destination (0 = unlimited)
+ * - step.instrs = instructions that must ALL appear in the destination (unordered)
+ * Returns { matched, destSize }.
+ */
+function matchBranchDest(ii, step) {
+    let instrText = instrIndex[ii].instr;
+    let parts = instrText.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+    if (parts[0] !== step.mnemonic) return { matched: false, destSize: 0 };
+
+    // Extract branch target
+    let tgt = (parts[0] === 'bc' && parts.length >= 3) ? parts[2] : (parts[1] || null);
+    if (!tgt) return { matched: false, destSize: 0 };
+
+    // Cache key: for local labels srcLine matters; for others just the target string
+    let cacheKey = tgt.startsWith('.') ? `${tgt}@${instrIndex[ii].rawIndex}` : tgt;
+    let destLines = destCache.has(cacheKey) ? destCache.get(cacheKey) : null;
+    if (destLines === undefined) {
+        destLines = getDestLines(tgt, instrIndex[ii].rawIndex);
+        destCache.set(cacheKey, destLines);
+    }
+    if (!destLines) { destCache.set(cacheKey, null); return { matched: false, destSize: 0 }; }
+
+    let destSize = destLines.length;
+
+    // step.maxLen = max lines INSIDE the destination (0 = no limit)
+    if (step.maxLen > 0 && destSize > step.maxLen) return { matched: false, destSize: 0 };
+
+    // UNORDERED match: every listed instruction must appear SOMEWHERE in dest (any order)
+    if (step.instrs.length > 0) {
+        let destNorms = destLines.map(l => { let ins = extractInstr(l); return ins ? norm(ins) : null; }).filter(Boolean);
+        for (let pat of step.instrs) {
+            if (!destNorms.some(dn => matchPat(dn, pat))) return { matched: false, destSize: 0 };
+        }
+    }
+
+    return { matched: true, destSize };
+}
+
+/** Full evaluation of a step against instrIndex[i]; returns {ok, ds (dest size)} */
+function evalStep(i, step) {
+    if (step.type === 'instr') return { ok: matchPat(instrIndex[i].normalized, step.n), ds: 0 };
+    if (step.type === 'oset')  return { ok: step.alts.some(a => matchPat(instrIndex[i].normalized, a)), ds: 0 };
+    if (step.type === 'branch_dest') {
+        let r = matchBranchDest(i, step);
+        return { ok: r.matched, ds: r.destSize };
+    }
+    return { ok: false, ds: 0 };
+}
+
+/** Fast check used for anchor scanning (no branch destination resolution) */
+function quickMatch(i, step) {
+    if (step.type === 'instr') return matchPat(instrIndex[i].normalized, step.n);
+    if (step.type === 'oset')  return step.alts.some(a => matchPat(instrIndex[i].normalized, a));
+    if (step.type === 'branch_dest') {
+        return instrIndex[i].instr.trim().toLowerCase().split(/[\s,]+/)[0] === step.mnemonic;
+    }
     return false;
 }
 
@@ -1182,30 +1220,38 @@ function findAll(seqs) {
 
     for (let seq of seqs) {
         if (!seq.length) continue;
-        // First non-gap step is the anchor
-        let fi = seq.findIndex(s => s.type === 'instr' || s.type === 'oset');
+        let fi = seq.findIndex(s => s.type === 'instr' || s.type === 'oset' || s.type === 'branch_dest');
         if (fi === -1) continue;
         let firstStep = seq[fi];
 
         for (let i = 0; i < instrIndex.length; i++) {
-            if (!matchStep(instrIndex[i].normalized, firstStep)) continue;
+            if (!quickMatch(i, firstStep)) continue;
 
-            // Match the rest of the sequence from i+1
+            // Full check on anchor
+            let aEval = evalStep(i, firstStep);
+            if (!aEval.ok) continue;
+
+            // Match remaining steps
             let pos = i + 1, afterGap = false, ok = true;
+            let totalDs = aEval.ds;
+
             for (let si = fi + 1; si < seq.length; si++) {
                 let step = seq[si];
                 if (step.type === 'gap') { afterGap = true; continue; }
                 if (afterGap) {
-                    let found = -1;
+                    let found = -1, fDs = 0;
                     for (let k = pos; k < instrIndex.length; k++) {
                         if (isHard(instrIndex[k].instr)) break;
-                        if (matchStep(instrIndex[k].normalized, step)) { found = k; break; }
+                        let ev = evalStep(k, step);
+                        if (ev.ok) { found = k; fDs = ev.ds; break; }
                     }
                     if (found === -1) { ok = false; break; }
-                    pos = found + 1; afterGap = false;
+                    totalDs += fDs; pos = found + 1; afterGap = false;
                 } else {
-                    if (pos >= instrIndex.length || !matchStep(instrIndex[pos].normalized, step)) { ok = false; break; }
-                    pos++;
+                    if (pos >= instrIndex.length) { ok = false; break; }
+                    let ev = evalStep(pos, step);
+                    if (!ev.ok) { ok = false; break; }
+                    totalDs += ev.ds; pos++;
                 }
             }
             if (!ok) continue;
@@ -1215,7 +1261,12 @@ function findAll(seqs) {
 
             let addr = addrOfLine(rawLines[startRaw]);
             let { lines, endRaw, branches } = collectGadget(startRaw);
-            map.set(startRaw, { startLine: startRaw, endLine: endRaw, address: addr, lines, length: lines.length, branches });
+            map.set(startRaw, {
+                startLine: startRaw, endLine: endRaw, address: addr,
+                lines, length: lines.length,
+                destTotalLines: totalDs,   // ← sum of all matched branch destination sizes
+                branches
+            });
         }
     }
     return [...map.values()];
@@ -1309,7 +1360,11 @@ function parseSearchInput(text) {
 
 function sortedGadgets(gadgets, by) {
     if (by === 'addr') return [...gadgets].sort((a,b) => parseInt(a.address||'0',16) - parseInt(b.address||'0',16));
-    if (by === 'len')  return [...gadgets].sort((a,b) => a.length - b.length);
+    if (by === 'len')  return [...gadgets].sort((a,b) => {
+        let la = a.length + (a.destTotalLines || 0);
+        let lb = b.length + (b.destTotalLines || 0);
+        return la - lb;
+    });
     return gadgets;
 }
 
@@ -1332,31 +1387,11 @@ function renderGadget(g) {
             let srcLine = g.startLine + li;
             let lbl     = tgt ? `↗ ${esc(tgt)}` : '↗';
 
-            // Auto-expand: populate content eagerly and show immediately
-            let panelContent = '';
-            let panelVisible = settings.autoExpand;
-            let panelLoaded  = settings.autoExpand;
-            if (settings.autoExpand) {
-                if (!tgt) {
-                    panelContent = `<div class="xnote">No branch target found in instruction text</div>`;
-                } else if (isReg) {
-                    panelContent = `<div class="xnote">Register target <strong>${esc(tgt)}</strong> — cannot resolve statically</div>`;
-                } else {
-                    let dl = getDestLines(tgt, srcLine);
-                    panelContent = dl
-                        ? dl.map(l => `<div class="xl">${esc(l)}</div>`).join('')
-                        : `<div class="xnote">Label/address <strong>${esc(tgt)}</strong> not found</div>`;
-                }
-            }
-
-            let btnCls      = panelVisible ? 'xbtn open' : 'xbtn';
-            let panelStyle  = panelVisible ? '' : 'display:none;';
-            let loadedAttr  = panelLoaded  ? 'data-loaded="1"' : '';
-
+            // Always render panel closed; scheduleAutoExpand() fills them in deferred
             html +=
                 `<div class="${cls}">${esc(raw)}` +
-                `<button class="${btnCls}" data-expid="${expId}" data-target="${esc(tgt)}" data-isreg="${isReg}" data-srcline="${srcLine}" onclick="toggleExpand(this)">${lbl}</button></div>` +
-                `<div class="xpanel" id="${expId}" style="${panelStyle}" ${loadedAttr}>${panelContent}</div>`;
+                `<button class="xbtn" data-expid="${expId}" data-target="${esc(tgt)}" data-isreg="${isReg}" data-srcline="${srcLine}" onclick="toggleExpand(this)">${lbl}</button></div>` +
+                `<div class="xpanel" id="${expId}" style="display:none"></div>`;
         }
     }
 
@@ -1368,7 +1403,11 @@ function renderGadget(g) {
 
     return `<div class="gadget-block">` +
         `<div class="gadget-header">` +
-        `<span>${esc(g.address||'?')} · lines ${g.startLine+1}–${g.endLine+1} · len ${g.length}</span>` +
+        `<span>${esc(g.address||'?')} · lines ${g.startLine+1}–${g.endLine+1} · ` +
+        (g.destTotalLines
+            ? `len <b>${g.length}</b>+${g.destTotalLines}=<b>${g.length + g.destTotalLines}</b>`
+            : `len ${g.length}`) +
+        `</span>` +
         `<button class="copy-gadget-btn" onclick="doCopy(this,${ci})">addr</button>` +
         `</div>${html}</div>`;
 }
@@ -1405,6 +1444,9 @@ function renderPage(gadgets, by, page) {
     resultsDiv.innerHTML = slice.map(g => renderGadget(g)).join('');
     resultsDiv.scrollTop = 0;
 
+    // Deferred auto-expand: populate panels in rAF batches (non-blocking)
+    if (settings.autoExpand) scheduleAutoExpand();
+
     let countNote = (settings.autoFilter && visible.length < gadgets.length)
         ? `  [filtered: ${visible.length} / ${gadgets.length}]` : '';
 
@@ -1422,45 +1464,77 @@ function renderPage(gadgets, by, page) {
 // ═══════════════════════════════════════════════════════
 //  EXPAND HANDLER
 // ═══════════════════════════════════════════════════════
+/** Build HTML content for an expand panel — uses renderCache to avoid repeated O(n) lookups */
+function buildPanelContent(target, isReg, srcLine) {
+    if (!target) return `<div class="xnote">No branch target found</div>`;
+    if (isReg)   return `<div class="xnote">Register target <strong>${esc(target)}</strong> — cannot resolve statically</div>`;
+
+    let cacheKey = target.startsWith('.') ? `${target}@${srcLine}` : target;
+    let destLines;
+    if (renderCache.has(cacheKey)) {
+        destLines = renderCache.get(cacheKey);
+    } else {
+        destLines = getDestLines(target, srcLine);
+        renderCache.set(cacheKey, destLines);
+    }
+    if (!destLines) return `<div class="xnote">Label/address <strong>${esc(target)}</strong> not found in disassembly</div>`;
+    return destLines.map(l => `<div class="xl">${esc(l)}</div>`).join('');
+}
+
 window.toggleExpand = function(btn) {
-    let expId  = btn.getAttribute('data-expid');
-    let target = btn.getAttribute('data-target');
-    let isReg  = btn.getAttribute('data-isreg') === 'true';
-    let panel  = document.getElementById(expId);
+    let expId   = btn.getAttribute('data-expid');
+    let target  = btn.getAttribute('data-target');
+    let isReg   = btn.getAttribute('data-isreg') === 'true';
+    let srcLine = parseInt(btn.getAttribute('data-srcline') || '-1');
+    let panel   = document.getElementById(expId);
     if (!panel) return;
 
-    // Toggle if already loaded
     if (panel.style.display === 'block') {
         panel.style.display = 'none';
         btn.classList.remove('open');
         return;
     }
 
-    // Lazy-load content
     if (!panel.dataset.loaded) {
         panel.dataset.loaded = '1';
-        let srcLine = parseInt(btn.getAttribute('data-srcline') || '-1');
-        if (!target) {
-            panel.innerHTML = `<div class="xnote">No branch target found in instruction text</div>`;
-        } else if (isReg) {
-            panel.innerHTML = `<div class="xnote">Register target ${esc(target)} — cannot resolve statically</div>`;
-        } else {
-            let destLines = getDestLines(target, srcLine);
-            if (!destLines) {
-                panel.innerHTML = `<div class="xnote">Label/address ${esc(target)} not found in disassembly</div>`;
-            } else {
-                panel.innerHTML = destLines.map(l => `<div class="xl">${esc(l)}</div>`).join('');
-            }
-        }
+        panel.innerHTML = buildPanelContent(target, isReg, srcLine);
     }
 
     panel.style.display = 'block';
     btn.classList.add('open');
 };
 
-// ═══════════════════════════════════════════════════════
-//  COPY GADGET
-// ═══════════════════════════════════════════════════════
+/**
+ * After a page is rendered, expand all branch panels in batches
+ * using requestAnimationFrame so the UI thread is never blocked.
+ * BATCH panels are expanded per frame → smooth, non-freezing.
+ */
+function scheduleAutoExpand() {
+    const BATCH = 6;
+    const btns  = Array.from(resultsDiv.querySelectorAll('.xbtn'));
+    if (!btns.length) return;
+    let idx = 0;
+    function tick() {
+        let end = Math.min(idx + BATCH, btns.length);
+        while (idx < end) {
+            let btn = btns[idx++];
+            let panel = document.getElementById(btn.getAttribute('data-expid'));
+            if (panel && panel.style.display !== 'block') {
+                if (!panel.dataset.loaded) {
+                    panel.dataset.loaded = '1';
+                    let target  = btn.getAttribute('data-target');
+                    let isReg   = btn.getAttribute('data-isreg') === 'true';
+                    let srcLine = parseInt(btn.getAttribute('data-srcline') || '-1');
+                    panel.innerHTML = buildPanelContent(target, isReg, srcLine);
+                }
+                panel.style.display = 'block';
+                btn.classList.add('open');
+            }
+        }
+        if (idx < btns.length) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
 window.doCopy = function(btn, idx) {
     let addr = copyBuf[idx] || '';
     navigator.clipboard.writeText(addr).then(() => {
@@ -1484,6 +1558,7 @@ async function performSearch() {
 
     setAction('Searching...');
     await new Promise(r => setTimeout(r, 10));
+    destCache.clear(); // clear branch-dest resolution cache for this search
 
     try {
         let gadgets;
@@ -1525,6 +1600,7 @@ function loadFile(file) {
             fileContent  = e.target.result;
             rawLines     = fileContent.split(/\r?\n/);
             instrIndex   = buildIndex(rawLines);
+            renderCache.clear();   // stale expand-panel cache from previous file
             let size     = new Blob([fileContent]).size;
             setDisasState('loaded', { name: file.name, lines: rawLines.length, instrs: instrIndex.length, size });
             setAction('File loaded');
@@ -1597,14 +1673,11 @@ instrTA.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════
 //  SETTINGS
 // ═══════════════════════════════════════════════════════
-function applyTheme(theme) {
-    settings.theme = theme;
-    document.body.classList.toggle('light', theme === 'light');
-    pillDark.classList.toggle('active',  theme === 'dark');
-    pillLight.classList.toggle('active', theme === 'light');
-}
-
 function openSettings() {
+    // Position panel near the settings button
+    let rect = settingsBtn.getBoundingClientRect();
+    settingsPanel.style.top   = (rect.bottom + 8) + 'px';
+    settingsPanel.style.right = (window.innerWidth - rect.right) + 'px';
     settingsPanel.style.display = 'block';
     settingsOverlay.classList.add('open');
 }
@@ -1613,7 +1686,7 @@ function closeSettings() {
     settingsOverlay.classList.remove('open');
 }
 
-settingsBtn.onclick    = () => settingsPanel.style.display === 'none' ? openSettings() : closeSettings();
+settingsBtn.onclick     = () => settingsPanel.style.display === 'none' ? openSettings() : closeSettings();
 settingsOverlay.onclick = closeSettings;
 
 // Auto-expand toggle
@@ -1637,9 +1710,14 @@ spMaxLen.oninput = () => {
     }
 };
 
-// Theme pills
-pillDark.onclick  = () => applyTheme('dark');
-pillLight.onclick = () => applyTheme('light');
+// Gadgets per page
+spPageSize.oninput = () => {
+    let v = parseInt(spPageSize.value);
+    if (v >= 1) {
+        PAGE_SIZE = v;
+        if (lastGadgets.length) renderPage(lastGadgets, currentSort, 0);
+    }
+};
 
 // Drag-and-drop
 document.addEventListener('dragover', e => e.preventDefault());
